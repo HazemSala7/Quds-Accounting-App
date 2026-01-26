@@ -37,15 +37,15 @@ class ProductQuds {
 
   factory ProductQuds.fromJson(Map<String, dynamic> json) {
     return ProductQuds(
-      id: json['id'] ?? "",
-      pName: json['p_name'] ?? "",
-      companyId: json['company_id'] ?? "",
-      productUnit: json['unit'] ?? "",
-      images: json['images'] ?? "",
-      description: json['description'] ?? "",
-      categoryId: json['category_id'] ?? "0",
-      productBarcode: json['product_barcode'] ?? "",
-      quantity: json['quantity'] ?? "",
+      id: (json['id'] ?? '').toString(),
+      pName: (json['p_name'] ?? '').toString(),
+      companyId: (json['company_id'] ?? '').toString(),
+      productUnit: (json['productUnit'] ?? json['unit'] ?? '').toString(),
+      images: (json['images'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      categoryId: (json['category_id'] ?? '0').toString(), // ✅ keep string
+      productBarcode: (json['product_barcode'] ?? '').toString(),
+      quantity: (json['quantity'] ?? '').toString(),
     );
   }
 }

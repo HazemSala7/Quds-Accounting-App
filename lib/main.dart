@@ -36,8 +36,15 @@ class Quds extends StatefulWidget {
 }
 
 class _QudsState extends State<Quds> {
-  bool isLogin = false;
   var customersList = [];
+  bool isLogin = false;
+
+  @override
+  void initState() {
+    setController();
+    super.initState();
+  }
+
   setController() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -62,12 +69,6 @@ class _QudsState extends State<Quds> {
       isLogin = _isLogin;
       customersList = res;
     });
-  }
-
-  @override
-  void initState() {
-    setController();
-    super.initState();
   }
 
   Widget build(BuildContext context) {

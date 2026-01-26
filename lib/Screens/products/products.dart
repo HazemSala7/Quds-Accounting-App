@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class _ProductsState extends State<Products> {
 
   var categories;
   int selectedCategoryIndex = 0;
-  int selectedCategoryId = 0;
+  String selectedCategoryId = "0";
   bool search = false;
   bool _hasMoreOfflineData = true;
   bool _isLoadingMoreOffline = false;
@@ -460,22 +461,24 @@ class _ProductsState extends State<Products> {
               top: 80,
               left: 20,
               right: 20,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.75),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.mic, color: Colors.redAccent, size: 28),
-                    SizedBox(width: 12),
-                    Text(
-                      "جاري الاستماع... قل: افتح [اسم المنتج]",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ],
+              child: Material(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.mic, color: Colors.redAccent, size: 28),
+                      SizedBox(width: 12),
+                      Text(
+                        "جاري الاستماع... قل: افتح [اسم المنتج]",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -860,7 +863,7 @@ class _ProductsState extends State<Products> {
                 child: InkWell(
                   onTap: () async {
                     setState(() {
-                      selectedCategoryId = categories[index]['id'];
+                      selectedCategoryId = categories[index]['id'].toString();
                       selectedCategoryIndex = index;
                       _hasNextPage = true;
                     });
@@ -871,7 +874,7 @@ class _ProductsState extends State<Products> {
                           _posts = [];
                           _page = 1;
                           selectedCategoryIndex = 0;
-                          selectedCategoryId = 0;
+                          selectedCategoryId = "0";
                         });
                         _firstLoad();
                       } else {
@@ -953,6 +956,8 @@ class _ProductsState extends State<Products> {
                         CartDatabaseHelper _dbHelper = CartDatabaseHelper();
                         List<Map<String, dynamic>> localProducts =
                             await _dbHelper.getProductsQuds();
+                        print("localProducts");
+                        print(localProducts);
 
                         // Filter only products of selected category when type is 'quds'
                         List<Map<String, dynamic>> filteredProducts =
@@ -1001,7 +1006,7 @@ class _ProductsState extends State<Products> {
                     ),
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(5.0),
                         child: Text(
                           categories[index]["name"].toString(),
                           style: TextStyle(
@@ -1256,26 +1261,26 @@ class _ProductsState extends State<Products> {
                   ),
                 ),
 
-                const SizedBox(width: 10),
+                // const SizedBox(width: 10),
 
-                // ===== Mic button =====
-                GestureDetector(
-                  onTap: _startListeningProduct, // <-- your speech function
-                  child: Container(
-                    width: 45,
-                    height: 45,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          Color.fromRGBO(83, 89, 219, 1),
-                          Color.fromRGBO(32, 39, 160, 0.6),
-                        ],
-                      ),
-                    ),
-                    child: const Icon(Icons.mic, color: Colors.white, size: 22),
-                  ),
-                ),
+                // // ===== Mic button =====
+                // GestureDetector(
+                //   onTap: _startListeningProduct, // <-- your speech function
+                //   child: Container(
+                //     width: 45,
+                //     height: 45,
+                //     decoration: const BoxDecoration(
+                //       shape: BoxShape.circle,
+                //       gradient: LinearGradient(
+                //         colors: [
+                //           Color.fromRGBO(83, 89, 219, 1),
+                //           Color.fromRGBO(32, 39, 160, 0.6),
+                //         ],
+                //       ),
+                //     ),
+                //     child: const Icon(Icons.mic, color: Colors.white, size: 22),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -1429,17 +1434,18 @@ class _ProductsState extends State<Products> {
     bool isOnline = prefs.getBool('isOnline') ?? true;
     if (isOnline) {
       var url =
-          'https://yaghm.com/admin/api/categories/${companyId.toString()}';
+          'https://yaghm.com/admin/api/categories-string-id/${companyId.toString()}';
       var response = await http.get(Uri.parse(url));
+
       if (response.statusCode == 200) {
         var res = jsonDecode(response.body);
         setState(() {
           categories = [
-            {"id": 0, "name": "جميع الأصناف"},
+            {"id": "0", "name": "جميع الأصناف"},
             ...res["categories"]
           ];
           selectedCategoryIndex = 0;
-          selectedCategoryId = 0;
+          selectedCategoryId = "0";
         });
       } else {
         throw Exception('Failed to load categories from API');
@@ -1451,11 +1457,11 @@ class _ProductsState extends State<Products> {
 
       setState(() {
         categories = [
-          {"id": 0, "name": "جميع الأصناف"},
+          {"id": "0", "name": "جميع الأصناف"},
           ...localCategories
         ];
         selectedCategoryIndex = 0;
-        selectedCategoryId = 0;
+        selectedCategoryId = "0";
       });
     }
   }
@@ -1579,7 +1585,8 @@ class _ProductsState extends State<Products> {
     final String price_codePref = (prefs.getString('price_code') ?? '').trim();
     final String lastPriceSetting =
         (prefs.getString('last_price') ?? 'true').trim();
-    final bool useLastPrice = lastPriceSetting.toLowerCase() != 'false';
+    // final bool useLastPrice = lastPriceSetting.toLowerCase() != 'false';
+    final bool useLastPrice = true;
     final bool hideProductLessThan0 =
         prefs.getBool('hideProductLessThan0') ?? false;
 
@@ -1627,6 +1634,7 @@ class _ProductsState extends State<Products> {
       double? chosen = null;
       if (useLastPrice) {
         final lpList = lastByProduct[pid];
+        // print('lpList for pid=$pid: $lpList');
         if (lpList != null && lpList.isNotEmpty) {
           // Take the *latest*. If you don’t store created_at locally, at least take the first.
           // Optionally sort by created_at desc if available.
@@ -1679,7 +1687,7 @@ class _ProductsState extends State<Products> {
       mutableProduct['price'] = priceDouble.toStringAsFixed(1);
 
       // Optional category filter (unchanged)
-      if (selectedCategoryId == 0 ||
+      if (selectedCategoryId == "0" ||
           _eq(mutableProduct['category_id'], selectedCategoryId)) {
         processedProducts.add(mutableProduct);
       }
@@ -1740,10 +1748,71 @@ class _ProductsState extends State<Products> {
     return x;
   }
 
+// ------------------------------------------------------
+// Helper: log voice failure to backend (fire & forget)
+// ------------------------------------------------------
+  Future<void> _logVoiceFailure({
+    required String commandText,
+    required String normalizedText,
+    required String extractedName,
+    required String reasonCode,
+    required String reasonMessage,
+    String? requestUrl,
+    int? httpStatus,
+    String? responseBody,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? companyId = prefs.getInt('company_id');
+      final int? salesmanId = prefs.getInt('salesman_id');
+      final String? t = prefs.getString('type');
+
+      final payload = {
+        "company_id": companyId,
+        "salesman_id": salesmanId,
+        "customer_id": widget.id, // from your screen
+        "app_type": t,
+        "command_text": commandText,
+        "normalized_text": normalizedText,
+        "extracted_name": extractedName,
+        "status": "failed",
+        "reason_code": reasonCode,
+        "reason_message": reasonMessage,
+        "request_url": requestUrl,
+        "http_status": httpStatus,
+        "response_body": responseBody != null
+            ? (responseBody.length > 15000
+                ? responseBody.substring(0, 15000)
+                : responseBody)
+            : null,
+        "meta": {
+          "source": "voice_search",
+        }
+      };
+
+      // fire-and-forget (do not block UI)
+      unawaited(
+        http.post(
+          Uri.parse("https://yaghm.com/admin/api/voice/log"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        ),
+      );
+    } catch (_) {
+      print("_");
+      print(_);
+      // ignore logging errors intentionally
+    }
+  }
+
+// ------------------------------------------------------
+// Your function: full version with DB logging on failures
+// ------------------------------------------------------
   Future<void> _searchFromBackendAndOpenAddProduct(String command) async {
     final c = _normalizeArabic(command);
 
-    String? name;
+    // 1) Extract product name
+    String name;
     if (c.contains('افتح منتج')) {
       name = c.split('افتح منتج').last.trim();
     } else if (c.startsWith('افتح')) {
@@ -1752,16 +1821,27 @@ class _ProductsState extends State<Products> {
       name = c.replaceFirst('ضيف', '').trim();
     } else if (c.startsWith('اضف')) {
       name = c.replaceFirst('اضف', '').trim();
+    } else if (c.startsWith('افتحلي')) {
+      name = c.replaceFirst('افتحلي', '').trim();
     } else {
       name = c.trim();
     }
 
-    if (name == null || name.isEmpty) {
+    // 2) Validate name
+    if (name.isEmpty) {
+      await _logVoiceFailure(
+        commandText: command,
+        normalizedText: c,
+        extractedName: "",
+        reasonCode: "EMPTY_NAME",
+        reasonMessage: "No product name extracted from voice command",
+      );
       Fluttertoast.showToast(msg: "قل: افتح [اسم المنتج]");
       return;
     }
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // 3) Session data
+    final prefs = await SharedPreferences.getInstance();
     final int? companyId = prefs.getInt('company_id');
     final int? salesmanId = prefs.getInt('salesman_id');
     final String? codePrice = prefs.getString('price_code');
@@ -1769,19 +1849,41 @@ class _ProductsState extends State<Products> {
     final bool online = prefs.getBool('isOnline') ?? true;
 
     if (companyId == null || salesmanId == null) {
+      await _logVoiceFailure(
+        commandText: command,
+        normalizedText: c,
+        extractedName: name,
+        reasonCode: "MISSING_SESSION",
+        reasonMessage: "company_id or salesman_id is null",
+      );
       Fluttertoast.showToast(msg: "بيانات الحساب غير مكتملة");
       return;
     }
 
+    // 4) Build URL
     final String query = Uri.encodeComponent(name);
+    // print("query");
+    // print(name);
 
-    final String url = (t.toString() == "quds")
+    String url = "";
+    url = (t.toString() == "quds")
         ? "https://yaghm.com/admin/api/search_products/$query/${companyId.toString()}/${salesmanId.toString()}/${widget.id.toString()}/$codePrice"
         : "https://yaghm.com/admin/api/search_products_vansale_new/${companyId.toString()}/${salesmanId.toString()}/${widget.id.toString()}/$codePrice/$query";
+
+    // 5) Call backend and handle errors
     try {
       final res = await http.get(Uri.parse(url));
-
       if (res.statusCode != 200) {
+        await _logVoiceFailure(
+          commandText: command,
+          normalizedText: c,
+          extractedName: name,
+          reasonCode: "HTTP_NOT_200",
+          reasonMessage: "Backend search failed",
+          requestUrl: url,
+          httpStatus: res.statusCode,
+          responseBody: res.body,
+        );
         Fluttertoast.showToast(msg: "فشل البحث من السيرفر");
         return;
       }
@@ -1795,11 +1897,23 @@ class _ProductsState extends State<Products> {
           : (decoded["products"] ?? []);
 
       if (products.isEmpty) {
+        await _logVoiceFailure(
+          commandText: command,
+          normalizedText: c,
+          extractedName: name,
+          reasonCode: "NO_PRODUCTS",
+          reasonMessage: "No products returned from backend for query",
+          requestUrl: url,
+          httpStatus: res.statusCode,
+          responseBody: res.body,
+        );
         Fluttertoast.showToast(msg: "لم يتم العثور على المنتج: $name");
         return;
       }
 
-      final Map first = Map<String, dynamic>.from(products.first);
+      // 6) Open AddProduct with first match
+      final Map<String, dynamic> first =
+          Map<String, dynamic>.from(products.first);
 
       Navigator.push(
         context,
@@ -1830,7 +1944,17 @@ class _ProductsState extends State<Products> {
           ),
         ),
       );
-    } catch (_) {
+    } catch (e) {
+      print("e");
+      print(e);
+      await _logVoiceFailure(
+        commandText: command,
+        normalizedText: c,
+        extractedName: name,
+        reasonCode: "EXCEPTION",
+        reasonMessage: e.toString(),
+        requestUrl: url,
+      );
       Fluttertoast.showToast(msg: "حدث خطأ أثناء البحث");
     }
   }

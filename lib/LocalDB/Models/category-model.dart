@@ -1,33 +1,38 @@
 class Category {
-  int? id; // If you need an ID for local storage
-  String name;
-  int companyId;
-  int salesmanId;
+  final String id; // make it non-null and always string
+  final String name;
+  final int companyId;
+  final int salesmanId;
 
   Category({
-    this.id,
+    required this.id,
     required this.name,
     required this.companyId,
     required this.salesmanId,
   });
 
-  // Convert a Category object into a Map object for storing in the database
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': id, // ALWAYS STRING
       'name': name,
       'company_id': companyId,
       'salesman_id': salesmanId,
     };
   }
 
-  // Create a Category object from a Map object
   factory Category.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+
     return Category(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? "",
-      companyId: json['company_id'] ?? 0,
-      salesmanId: json['salesman_id'] ?? 0,
+      id: rawId == null ? '0' : rawId.toString(), // ALWAYS STRING
+      name: (json['name'] ?? '').toString(),
+      companyId: int.tryParse((json['company_id'] ?? 0).toString()) ?? 0,
+      salesmanId: int.tryParse((json['salesman_id'] ?? 0).toString()) ?? 0,
     );
+  }
+
+  @override
+  String toString() {
+    return 'Category{id: "$id", name: "$name", company_id: $companyId, salesman_id: $salesmanId}';
   }
 }

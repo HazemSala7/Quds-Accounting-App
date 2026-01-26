@@ -8,8 +8,11 @@ import 'package:http/http.dart' as http;
 /// Optional widths config passed from the parent header so columns align perfectly.
 class KashfLayout {
   final double balance, mnh, lah, bayan, date, actionId, notes;
+  final String customerName, customerID;
   const KashfLayout({
     required this.balance,
+    required this.customerID,
+    required this.customerName,
     required this.mnh,
     required this.lah,
     required this.bayan,
@@ -24,6 +27,7 @@ class KashfLayout {
 class KashfCard extends StatefulWidget {
   final dynamic mnh, lah, balance, bayan, date, action_id, notes;
   final dynamic actions, shekat;
+  final String customerName, customerID;
 
   /// NEW: optional layout widths to match the header row
   final KashfLayout? layoutWidths;
@@ -31,6 +35,8 @@ class KashfCard extends StatefulWidget {
   const KashfCard({
     Key? key,
     required this.action_id,
+    required this.customerID,
+    required this.customerName,
     this.mnh,
     this.lah,
     required this.date,
@@ -61,6 +67,8 @@ class _KashfCardState extends State<KashfCard> {
       const KashfLayout(
         balance: _wBalance,
         mnh: _wMnh,
+        customerID: "0",
+        customerName: "",
         lah: _wLah,
         bayan: _wBayan,
         date: _wDate,
@@ -113,13 +121,13 @@ class _KashfCardState extends State<KashfCard> {
                       MaterialPageRoute(
                         builder: (context) => OrdersDetails(
                           printed: "0",
-                          customer_id: "",
+                          customer_id: widget.customerID,
                           orderDiscount: "0",
                           fatoraID: "1",
-                          fatoraNumber: 0,
+                          fatoraNumber: widget.action_id.toString(),
                           orderNotes: "",
                           deliveryDate: "",
-                          customer_name: "",
+                          customer_name: widget.customerName,
                           order_total: 0.0,
                           f_code: "2",
                           id: widget.action_id,

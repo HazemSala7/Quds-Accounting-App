@@ -33,7 +33,7 @@ class CartDatabaseHelper {
   factory CartDatabaseHelper() => _instance;
   CartDatabaseHelper._internal();
 
-  static const int dbVersion = 44;
+  static const int dbVersion = 48;
   static Database? _database;
 
   Future<Database?> get database async {
@@ -60,12 +60,142 @@ class CartDatabaseHelper {
     await db.transaction((txn) async {
       await _ensureTablesAndColumns(txn, expectedSchemas);
 
-      // —— versioned, idempotent extras —— //
+      // categories.id integer -> text
+      if (oldVersion < 47) {
+        await _migrateCategoriesIdToText(txn);
+      }
+
+      // ✅ products_quds.category_id integer -> text (preserve 01..04)
+      if (oldVersion < 48) {
+        await _migrateProductsQudsCategoryIdToText(txn);
+      }
+
       if (oldVersion < 35) {
         await _createIndexes(txn);
-        // Optional: normalize boolean/text inconsistencies here.
       }
     });
+  }
+
+  Future<void> _migrateProductsQudsCategoryIdToText(DatabaseExecutor db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='products_quds'",
+    );
+    if (tables.isEmpty) return;
+
+    // Check current type of category_id
+    final info = await db.rawQuery('PRAGMA table_info(products_quds)');
+    final catRow = info.firstWhere(
+      (r) => r['name'] == 'category_id',
+      orElse: () => {},
+    );
+
+    final currentType = (catRow['type'] ?? '').toString().toUpperCase();
+    if (currentType == 'TEXT') {
+      print('✅ products_quds.category_id already TEXT, skipping migration.');
+      return;
+    }
+
+    const temp = 'products_quds_old';
+    await db.execute('ALTER TABLE products_quds RENAME TO $temp');
+
+    // Recreate with TEXT category_id
+    await db.execute('''
+    CREATE TABLE products_quds (
+      id TEXT NOT NULL,
+      p_name TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      images TEXT NOT NULL,
+      description TEXT NOT NULL,
+      quantity TEXT NOT NULL,
+      category_id TEXT NOT NULL,
+      product_barcode TEXT NOT NULL,
+      productUnit TEXT DEFAULT ''
+    )
+  ''');
+
+    // Copy with formatting:
+    // - if old category_id is integer 1..9 -> "01".."09"
+    // - else keep text
+    await db.execute('''
+    INSERT INTO products_quds (
+      id, p_name, company_id, images, description, quantity, category_id, product_barcode, productUnit
+    )
+    SELECT
+      CAST(id AS TEXT),
+      p_name,
+      company_id,
+      images,
+      description,
+      quantity,
+      CASE
+        WHEN typeof(category_id) = 'integer' THEN printf('%02d', category_id)
+        ELSE CAST(category_id AS TEXT)
+      END AS category_id,
+      product_barcode,
+      COALESCE(productUnit, '')
+    FROM $temp
+  ''');
+
+    await db.execute('DROP TABLE $temp');
+
+    print(
+        '✅ Migrated products_quds.category_id to TEXT and preserved leading zeros.');
+  }
+
+  Future<void> _migrateCategoriesIdToText(DatabaseExecutor db) async {
+    // 1) Check current type
+    final info = await db.rawQuery('PRAGMA table_info(categories)');
+    final idRow = info.firstWhere(
+      (r) => r['name'] == 'id',
+      orElse: () => {},
+    );
+
+    final currentType = (idRow['type'] ?? '').toString().toUpperCase();
+
+    // If already TEXT, nothing to do
+    if (currentType == 'TEXT') {
+      // ignore: avoid_print
+      print('✅ categories.id already TEXT, skipping migration.');
+      return;
+    }
+
+    // 2) Recreate table keeping data
+    // We must transform the id during copy to preserve leading zeros.
+    // Your helper copies columns "as-is", so we do the copy manually here.
+
+    const temp = 'categories_old';
+    await db.execute('ALTER TABLE categories RENAME TO $temp');
+
+    // Create new categories table with correct schema (TEXT id)
+    await db.execute('''
+    CREATE TABLE categories (
+      id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      company_id INTEGER NOT NULL,
+      salesman_id INTEGER NOT NULL
+    )
+  ''');
+
+    // Copy with formatting:
+    // - If old id is numeric 1..9 -> "01".."09"
+    // - If old id already text -> keep it
+    await db.execute('''
+    INSERT INTO categories (id, name, company_id, salesman_id)
+    SELECT
+      CASE
+        WHEN typeof(id) = 'integer' THEN printf('%02d', id)
+        ELSE CAST(id AS TEXT)
+      END AS id,
+      name,
+      company_id,
+      salesman_id
+    FROM $temp
+  ''');
+
+    await db.execute('DROP TABLE $temp');
+
+    // ignore: avoid_print
+    print('✅ Migrated categories.id to TEXT and preserved leading zeros.');
   }
 
   /// Ensures each table exists with at least the expected columns.
@@ -291,7 +421,7 @@ class CartDatabaseHelper {
       'images': 'TEXT NOT NULL',
       'description': 'TEXT NOT NULL',
       'quantity': 'TEXT NOT NULL',
-      'category_id': 'INTEGER NOT NULL',
+      'category_id': 'TEXT NOT NULL',
       'product_barcode': 'TEXT NOT NULL',
       'productUnit': 'TEXT DEFAULT ""',
     },
@@ -379,7 +509,7 @@ class CartDatabaseHelper {
       'company_id': 'INTEGER NOT NULL',
     },
     'categories': {
-      'id': 'INTEGER NOT NULL',
+      'id': 'TEXT NOT NULL',
       'name': 'TEXT NOT NULL',
       'company_id': 'INTEGER NOT NULL',
       'salesman_id': 'INTEGER NOT NULL',
@@ -700,7 +830,7 @@ class CartDatabaseHelper {
         images TEXT NOT NULL,
         description TEXT NOT NULL,
         quantity TEXT NOT NULL,
-        category_id INTEGER NOT NULL,
+        category_id TEXT NOT NULL,
         product_barcode TEXT NOT NULL,
         productUnit TEXT DEFAULT ''
       )
@@ -741,7 +871,7 @@ class CartDatabaseHelper {
 
     await db.execute('''
       CREATE TABLE categories (
-        id INTEGER NOT NULL,
+        id TEXT NOT NULL,
         name TEXT NOT NULL,
         company_id INTEGER NOT NULL,
         salesman_id INTEGER NOT NULL
@@ -1249,7 +1379,16 @@ class CartDatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getCategories() async {
     final db = await database;
-    return await db!.query('categories');
+    final rows = await db!.rawQuery('''
+    SELECT 
+      CAST(id AS TEXT) AS id,
+      name,
+      company_id,
+      salesman_id
+    FROM categories
+    ORDER BY CAST(id AS TEXT) ASC
+  ''');
+    return rows;
   }
 
   Future<List<Map<String, dynamic>>> getProductsVansale() async {

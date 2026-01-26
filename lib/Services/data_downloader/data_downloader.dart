@@ -240,7 +240,6 @@ class DataDownloader {
       Fluttertoast.showToast(msg: "Error: No response from server.");
       return;
     }
-
     // ✅ Detect if the response contains pagination
     if (firstResponse.containsKey("products")) {
       var productsData = firstResponse["products"];
@@ -375,13 +374,41 @@ class DataDownloader {
 
   Future<void> _saveProductsQuds(List<dynamic> productsData) async {
     try {
-      List<ProductQuds> products = productsData
-          .map((productData) => ProductQuds.fromJson(productData))
-          .toList();
-      var db = await CartDatabaseHelper().database;
-      for (var product in products) {
-        await db!.insert('products_quds', product.toJson());
+      final db = await CartDatabaseHelper().database;
+
+      // optional but recommended to avoid duplicates
+      await db!.delete('products_quds');
+
+      for (final item in productsData) {
+        final map = Map<String, dynamic>.from(item);
+
+        final product = ProductQuds.fromJson(map);
+
+        // ✅ force lossless category_id as text exactly from API
+        final String categoryIdText =
+            map['category_id'] == null ? '0' : map['category_id'].toString();
+
+        final row = product.toJson();
+        row['category_id'] = categoryIdText;
+
+        await db.insert(
+          'products_quds',
+          row,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
+
+      // ✅ print stored rows + sqlite typeof(category_id)
+      final stored = await db.rawQuery('''
+      SELECT 
+        id,
+        category_id,
+        typeof(category_id) AS cat_sqlite_type,
+        p_name
+      FROM products_quds
+      ORDER BY id ASC
+      LIMIT 50
+    ''');
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString());
     }
@@ -436,12 +463,51 @@ class DataDownloader {
   }
 
   Future<void> _saveCategories(List<dynamic> categoriesData) async {
-    List<Category> categories = categoriesData
-        .map((categoryData) => Category.fromJson(categoryData))
-        .toList();
-    var db = await CartDatabaseHelper().database;
-    for (var category in categories) {
-      await db!.insert('categories', category.toJson());
+    final db = await CartDatabaseHelper().database;
+
+    // 1️⃣ Clear old rows
+    await db!.delete('categories');
+
+    // 2️⃣ Insert exactly as TEXT
+    for (final item in categoriesData) {
+      final map = Map<String, dynamic>.from(item);
+
+      final String idAsText = map['id'] == null ? '0' : map['id'].toString();
+
+      debugPrint('➡️ inserting id="$idAsText" type=${idAsText.runtimeType}');
+
+      await db.insert(
+        'categories',
+        {
+          'id': idAsText, // TEXT
+          'name': (map['name'] ?? '').toString(),
+          'company_id': int.tryParse((map['company_id'] ?? 0).toString()) ?? 0,
+          'salesman_id':
+              int.tryParse((map['salesman_id'] ?? 0).toString()) ?? 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    // 3️⃣ READ BACK + PRINT (FORCE TEXT)
+    final rows = await db.rawQuery('''
+    SELECT 
+      CAST(id AS TEXT) AS id,
+      typeof(id) AS id_type,
+      name,
+      company_id,
+      salesman_id
+    FROM categories
+    ORDER BY CAST(id AS TEXT) ASC
+  ''');
+
+    debugPrint('=== 📦 CATEGORIES STORED IN SQLITE ===');
+    for (final row in rows) {
+      debugPrint(
+        'id=${row["id"]} '
+        '(type=${row["id_type"]}, dartType=${row["id"]?.runtimeType}) '
+        'name=${row["name"]}',
+      );
     }
   }
 

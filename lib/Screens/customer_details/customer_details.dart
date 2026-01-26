@@ -27,33 +27,57 @@ import 'customer_details_card/customer_details_card.dart';
 
 class CustomerDetails extends StatefulWidget {
   final id, name, balance, lattitude, longitude;
+
+  /// NEW: used by voice command to auto-open سند قبض/صرف
+  /// values: 'receipt' | 'payment' | null
+  final String? autoOpen;
+
   bool edit;
-  CustomerDetails(
-      {Key? key,
-      this.id,
-      required this.edit,
-      required this.balance,
-      this.name,
-      required this.lattitude,
-      required this.longitude})
-      : super(key: key);
+
+  CustomerDetails({
+    Key? key,
+    this.id,
+    required this.edit,
+    required this.balance,
+    this.name,
+    required this.lattitude,
+    required this.longitude,
+    this.autoOpen, // <-- ADD THIS
+  }) : super(key: key);
 
   @override
   State<CustomerDetails> createState() => _CustomerDetailsState();
 }
 
 class _CustomerDetailsState extends State<CustomerDetails> {
-  @override
   String scanBarcode = '';
   bool isOnline = false;
   final FocusNode _barcodeFocusNode = FocusNode();
+
   String type = "";
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey();
+
   TextEditingController idController = TextEditingController();
   TextEditingController badrcodeController = TextEditingController();
+
   var Price_Code;
   var roleID;
-  initiatePrefs() async {
+
+  Timer? _timer;
+  bool dontgo = false;
+
+  bool qr_barcode = false;
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController phoneNumberController = TextEditingController();
+
+  FocusNode n = FocusNode();
+  var focusNode = FocusNode();
+
+  var pr;
+
+  // ------------------- PREFS -------------------
+  Future<void> initiatePrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? code_price = prefs.getString('price_code');
     String? _type = prefs.getString('type') ?? "quds";
@@ -68,13 +92,40 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     });
   }
 
-  Timer? _timer;
-  bool dontgo = false;
+  // ------------------- AUTO OPEN (VOICE) -------------------
+  void _handleAutoOpenIfNeeded() {
+    if (!mounted) return;
 
-  editName() async {
+    if (widget.autoOpen == 'receipt') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CatchReceipt(
+            balance: widget.balance,
+            name: widget.name.toString(),
+            id: widget.id,
+          ),
+        ),
+      );
+    } else if (widget.autoOpen == 'payment') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AddSarf(
+            name: widget.name.toString(),
+            id: widget.id,
+          ),
+        ),
+      );
+    }
+  }
+
+  // ------------------- EDIT NAME -------------------
+  Future<void> editName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? company_id = prefs.getInt('company_id');
     int? salesman_id = prefs.getInt('salesman_id');
+
     var url = AppLink.editCustomerName;
     final response = await http.post(
       Uri.parse(url),
@@ -86,20 +137,14 @@ class _CustomerDetailsState extends State<CustomerDetails> {
         'phone1': phoneNumberController.text,
       },
     );
+
     var data = jsonDecode(response.body);
-    print("data");
-    print({
-      'customer_id': widget.id.toString(),
-      'company_id': company_id.toString(),
-      'salesman_id': salesman_id.toString(),
-      'c_name': nameController.text,
-      'phone1': phoneNumberController.text,
-    });
-    print(data);
+
     if (data['status'] == 'true') {
       Navigator.of(context, rootNavigator: true).pop();
       Fluttertoast.showToast(msg: "تم تعديل أسم الزبون بنجاح");
       Navigator.pop(context, true);
+
       var headers = {'ContentType': 'application/json'};
       var url = '${AppLink.customers}/$company_id/$salesman_id';
       var response = await http.get(Uri.parse(url), headers: headers);
@@ -116,18 +161,17 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       );
     } else {
       Navigator.of(context, rootNavigator: true).pop();
-      // print('fsdsdfs');
     }
   }
 
   _AnimatedFlutterLogoState() {
-    _timer = new Timer(const Duration(milliseconds: 400), () {
+    _timer = Timer(const Duration(milliseconds: 400), () {
       setState(() {});
     });
   }
 
-  bool qr_barcode = false;
-  barcodeScan() async {
+  // ------------------- BARCODE SCAN SCREEN -------------------
+  Future<String?> barcodeScan() async {
     final scannedBarcode = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -136,29 +180,17 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     );
 
     if (scannedBarcode != null) {
-      return scannedBarcode;
+      return scannedBarcode.toString();
     }
+    return null;
   }
 
-  // qrScan() async {
-  //   String barcodeScanRes = "";
-
-  //   try {
-  //     barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-  //         '#ff6666', 'Cancel', true, ScanMode.QR);
-  //   } on PlatformException {
-  //     barcodeScanRes = '';
-  //   }
-
-  //   return barcodeScanRes;
-  // }
-
-  var pr;
-
-  setPrice(pro_id) async {
+  // ------------------- PRICES -------------------
+  Future<String> setPrice(pro_id) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? company_id = prefs.getInt('company_id');
     int? salesman_id = prefs.getInt('salesman_id');
+
     var url =
         'http://yaghm.com/admin/api/check_invoiceproducts/${company_id.toString()}/${salesman_id.toString()}/${widget.id}/$pro_id';
     var response = await http.get(Uri.parse(url));
@@ -166,14 +198,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     if (res["invoiceproducts"].length == 0) {
       return "0";
     } else {
-      return res["invoiceproducts"][0]["p_price"];
+      return res["invoiceproducts"][0]["p_price"].toString();
     }
   }
 
-  setPriceBarcode(pro_id) async {
+  Future<String> setPriceBarcode(pro_id) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? company_id = prefs.getInt('company_id');
     int? salesman_id = prefs.getInt('salesman_id');
+
     var url =
         'http://yaghm.com/admin/api/get_price_barcode/${company_id.toString()}/${salesman_id.toString()}/${widget.id}/$pro_id';
     var response = await http.get(Uri.parse(url));
@@ -181,48 +214,54 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     if (res["invoiceproducts"].length == 0) {
       return "0";
     } else {
-      return res["invoiceproducts"][0]["p_price"];
+      return res["invoiceproducts"][0]["p_price"].toString();
     }
   }
 
-  searchProducts() async {
+  // ------------------- SEARCH PRODUCTS BY ID -------------------
+  Future<void> searchProducts() async {
     if (isOnline) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       int? company_id = prefs.getInt('company_id');
       int? salesman_id = prefs.getInt('salesman_id');
       String? type = prefs.getString('type');
       String? code_price = prefs.getString('price_code');
+
       var url = type == "quds"
           ? 'http://yaghm.com/admin/api/get_specefic_product_quds/${idController.text}/${company_id.toString()}/${salesman_id.toString()}/${widget.id}/${code_price}'
           : 'http://yaghm.com/admin/api/get_specefic_product_vansale/${idController.text}/${company_id.toString()}/${salesman_id.toString()}/${widget.id}/${code_price}';
+
       var response = await http.get(Uri.parse(url));
+
       try {
         var res = jsonDecode(response.body)["products"][0];
+
         Navigator.of(context, rootNavigator: true).pop();
-        setState(() {
-          idController.text = "";
-        });
+        setState(() => idController.text = "");
+
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => AddProduct(
-                      isOnline: isOnline,
-                      image: "",
-                      packingNumber: "",
-                      packingPrice: "",
-                      productColors: "",
-                      checkProductBarcode20or13: false,
-                      id: res["id"],
-                      productUnit: res["unit"] ?? "",
-                      desc: res["description"] ?? "",
-                      name: res["p_name"],
-                      checkProductBarcode: false,
-                      productBarcode: "",
-                      customer_id: widget.name.toString(),
-                      price: res["price"],
-                      qty: res["quantity"] ?? "0",
-                      qtyExist: res["quantity"] ?? "0",
-                    )));
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddProduct(
+              isOnline: isOnline,
+              image: "",
+              packingNumber: "",
+              packingPrice: "",
+              productColors: "",
+              checkProductBarcode20or13: false,
+              id: res["id"],
+              productUnit: res["unit"] ?? "",
+              desc: res["description"] ?? "",
+              name: res["p_name"],
+              checkProductBarcode: false,
+              productBarcode: "",
+              customer_id: widget.name.toString(),
+              price: res["price"],
+              qty: res["quantity"] ?? "0",
+              qtyExist: res["quantity"] ?? "0",
+            ),
+          ),
+        );
       } catch (e) {
         Navigator.of(context, rootNavigator: true).pop();
         Fluttertoast.showToast(msg: "المنتج غير متوفر!");
@@ -233,7 +272,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       final dbHelper = CartDatabaseHelper();
       String productId = idController.text.trim();
 
-// Fetch data from DB
       List<Map<String, dynamic>> products = type.toString() == "quds"
           ? await dbHelper.getProductsQuds()
           : await dbHelper.getProductsVansale();
@@ -242,32 +280,28 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       List<Map<String, dynamic>> localLastPrices =
           await dbHelper.getLastPrices();
 
-// 🔍 Find the product you want directly
-      Map<String, dynamic>? matchedProduct = products.firstWhere(
+      Map<String, dynamic> matchedProduct = products.firstWhere(
         (p) => p['id'].toString() == productId,
         orElse: () => {},
       );
 
-// ❌ If product not found
-      if (matchedProduct == null || matchedProduct.isEmpty) {
+      if (matchedProduct.isEmpty) {
         Navigator.of(context, rootNavigator: true).pop();
         Fluttertoast.showToast(msg: "المنتج غير متوفر!");
         return;
       }
 
-// ✅ Now process only this product
       Map<String, dynamic> mutableProduct = Map.from(matchedProduct);
+
       String product_id = mutableProduct['id'].toString();
       String customer_id = widget.id.toString();
       String price_code = prefs.getString('price_code') ?? '';
 
-// Filter prices
       List<Map<String, dynamic>> prices = localPrices.where((price) {
         return price['product_id'].toString() == product_id &&
             price['company_id'].toString() == company_id;
       }).toList();
 
-// Filter last prices
       List<Map<String, dynamic>> lastPriceCheck =
           localLastPrices.where((lastPrice) {
         return lastPrice['product_id'].toString() == product_id &&
@@ -275,7 +309,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
             lastPrice['customer_id'].toString() == customer_id;
       }).toList();
 
-// Determine final price
       if (lastPriceCheck.isEmpty) {
         if (prices.isEmpty) {
           mutableProduct['price'] = '0';
@@ -283,30 +316,28 @@ class _CustomerDetailsState extends State<CustomerDetails> {
           mutableProduct['price'] = prices[0]['price'].toString();
         } else {
           var selectedPrice = prices.firstWhere(
-              (price) => price['price_code'] == price_code,
-              orElse: () => {'price': '0'});
+            (price) => price['price_code'] == price_code,
+            orElse: () => {'price': '0'},
+          );
           mutableProduct['price'] = selectedPrice['price'].toString();
         }
       } else {
         mutableProduct['price'] = lastPriceCheck[0]['price'].toString();
       }
 
-// Format price
       mutableProduct['price'] =
-          double.parse(mutableProduct['price']).toString();
+          double.tryParse(mutableProduct['price'].toString())?.toString() ??
+              "0";
 
-// Fix image path
       if (mutableProduct['images'] != null &&
-          mutableProduct['images'].length > 7) {
+          mutableProduct['images'].toString().length > 7) {
         mutableProduct['images'] =
-            "https://aliexpress.ps/quds_laravel/public/storage/${mutableProduct['images'].substring(7)}";
+            "https://aliexpress.ps/quds_laravel/public/storage/${mutableProduct['images'].toString().substring(7)}";
       }
 
-// ✅ Navigate to product page
       Navigator.of(context, rootNavigator: true).pop();
-      setState(() {
-        idController.text = "";
-      });
+      setState(() => idController.text = "");
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -333,60 +364,59 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     }
   }
 
-  TextEditingController nameController = TextEditingController();
-  TextEditingController phoneNumberController = TextEditingController();
-
-  search_bar() async {
+  // ------------------- SEARCH BY BARCODE -------------------
+  Future<void> search_bar() async {
     if (isOnline) {
-      // ONLINE - Perform API search
       try {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         int? company_id = prefs.getInt('company_id');
         int? salesman_id = prefs.getInt('salesman_id');
         String? type = prefs.getString('type');
-        // API URL for barcode search
+
         var url = type.toString() == "quds"
             ? 'https://yaghm.com/admin/api/search_products_barcode/${company_id.toString()}/${salesman_id.toString()}/${scanBarcode.toString()}'
             : 'https://yaghm.com/admin/api/search_products_barcode_vansale/${company_id.toString()}/${salesman_id.toString()}/${scanBarcode.toString()}';
+
         var response = await http.get(Uri.parse(url));
         var res = jsonDecode(response.body)["products"][0];
+
         var price = "0";
         var prices = res["prices"];
 
-        // Same pricing logic as before
         if (type == "quds") {
           pr = await setPriceBarcode(scanBarcode.toString());
           if (pr.toString() == "0") {
             if (prices.isEmpty) {
               price = "0";
             } else if (prices.length == 1) {
-              price = prices[0]["price"];
+              price = prices[0]["price"].toString();
             } else {
               var _price = prices.firstWhere(
-                  (e) => e["price_code"] == Price_Code,
-                  orElse: () => {"price": "0"});
-              price = _price["price"];
+                (e) => e["price_code"] == Price_Code,
+                orElse: () => {"price": "0"},
+              );
+              price = _price["price"].toString();
             }
           } else {
-            price = pr;
+            price = pr.toString();
           }
         } else {
           if (prices.isEmpty) {
             price = "0";
           } else if (prices.length == 1) {
-            price = prices[0]["price"];
+            price = prices[0]["price"].toString();
           } else {
-            var _price = prices.firstWhere((e) => e["price_code"] == Price_Code,
-                orElse: () => {"price": "0"});
-            price = _price["price"];
+            var _price = prices.firstWhere(
+              (e) => e["price_code"] == Price_Code,
+              orElse: () => {"price": "0"},
+            );
+            price = _price["price"].toString();
           }
         }
 
-        // Navigate to AddProduct screen
         Navigator.of(context, rootNavigator: true).pop();
-        setState(() {
-          badrcodeController.text = "";
-        });
+        setState(() => badrcodeController.text = "");
+
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
@@ -414,7 +444,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
           ),
         );
 
-        // 🔁 If AddProduct returns true, request focus
         if (result == true) {
           FocusScope.of(context).requestFocus(_barcodeFocusNode);
         }
@@ -424,7 +453,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
             msg: "المنتج غير متوفر , الرجاء المحاولة فيما بعد");
       }
     } else {
-      // OFFLINE - Perform local search
       try {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         String? company_id = prefs.getInt('company_id')?.toString();
@@ -438,116 +466,111 @@ class _CustomerDetailsState extends State<CustomerDetails> {
         List<Map<String, dynamic>> localLastPrices =
             await dbHelper.getLastPrices();
 
-        // First: Try to find by barcode
         Map<String, dynamic> matchedProduct = products.firstWhere(
           (product) =>
               product['product_barcode'].toString() == scanBarcode.toString(),
           orElse: () => {},
         );
 
-        // If not found by barcode and barcode has 20 or 13 digits, try to extract ID
         if (matchedProduct.isEmpty &&
             (scanBarcode.length == 20 || scanBarcode.length == 13)) {
-          String productId = scanBarcode.length == 20
-              ? scanBarcode.substring(3, 7)
-              : scanBarcode.substring(3, 7);
-
+          String productId = scanBarcode.substring(3, 7);
           matchedProduct = products.firstWhere(
             (p) => p['id'].toString() == productId,
             orElse: () => {},
           );
         }
 
-        if (matchedProduct.isNotEmpty) {
-          Map<String, dynamic> mutableProduct = Map.from(matchedProduct);
-          String product_id = mutableProduct['id'].toString();
-          String customer_id = widget.id.toString();
-          String price_code = prefs.getString('price_code') ?? '';
-
-          List<Map<String, dynamic>> prices = localPrices.where((price) {
-            return price['product_id'].toString() == product_id &&
-                price['company_id'].toString() == company_id;
-          }).toList();
-
-          List<Map<String, dynamic>> lastPriceCheck =
-              localLastPrices.where((lastPrice) {
-            return lastPrice['product_id'].toString() == product_id &&
-                lastPrice['company_id'].toString() == company_id &&
-                lastPrice['customer_id'].toString() == customer_id;
-          }).toList();
-
-          if (lastPriceCheck.isEmpty) {
-            if (prices.isEmpty) {
-              mutableProduct['price'] = '0';
-            } else if (prices.length == 1) {
-              mutableProduct['price'] = prices[0]['price'].toString();
-            } else {
-              var selectedPrice = prices.firstWhere(
-                  (price) => price['price_code'] == price_code,
-                  orElse: () => {'price': '0'});
-              mutableProduct['price'] = selectedPrice['price'].toString();
-            }
-          } else {
-            mutableProduct['price'] = lastPriceCheck[0]['price'].toString();
-          }
-
-          mutableProduct['price'] =
-              double.parse(mutableProduct['price']).toStringAsFixed(1);
-
-          if (mutableProduct['images'] != null &&
-              mutableProduct['images'].length > 7) {
-            mutableProduct['images'] =
-                "https://aliexpress.ps/quds_laravel/public/storage/${mutableProduct['images'].substring(7)}";
-          }
-
-          double qty = 0.0;
-          int barcodeLength = scanBarcode.toString().length;
-          if (barcodeLength == 20) {
-            qty = int.parse(scanBarcode.substring(7, 13)) / 100;
-          } else if (barcodeLength == 13) {
-            qty = int.parse(scanBarcode.substring(7, 12)) / 1000;
-          } else {
-            qty = double.tryParse(mutableProduct["quantity"].toString()) ?? 0.0;
-          }
-
-          Navigator.of(context, rootNavigator: true).pop();
-          setState(() {
-            badrcodeController.text = "";
-          });
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddProduct(
-                isOnline: isOnline,
-                image: mutableProduct["images"] ?? "",
-                productUnit: mutableProduct["productUnit"] ?? "-",
-                packingNumber: mutableProduct["packingNumber"] ?? "",
-                packingPrice: mutableProduct["packingPrice"] ?? "",
-                productColors: mutableProduct["productColors"] ?? "",
-                checkProductBarcode20or13:
-                    barcodeLength == 20 || barcodeLength == 13,
-                id: mutableProduct["id"].toString(),
-                desc: mutableProduct["description"] ?? "",
-                checkProductBarcode: true,
-                productBarcode: scanBarcode.toString(),
-                name: mutableProduct["p_name"] ?? "Unknown Product",
-                customer_id: widget.name.toString(),
-                price: mutableProduct["price"].toString(),
-                qty: qty.toString(),
-                qtyExist: mutableProduct["quantity"].toString(),
-              ),
-            ),
-          );
-          FocusScope.of(context).requestFocus(_barcodeFocusNode);
-        } else {
+        if (matchedProduct.isEmpty) {
           Navigator.of(context, rootNavigator: true).pop();
           Fluttertoast.showToast(
               msg: "المنتج غير متوفر , الرجاء المحاولة فيما بعد");
+          return;
         }
+
+        Map<String, dynamic> mutableProduct = Map.from(matchedProduct);
+
+        String product_id = mutableProduct['id'].toString();
+        String customer_id = widget.id.toString();
+        String price_code = prefs.getString('price_code') ?? '';
+
+        List<Map<String, dynamic>> prices = localPrices.where((price) {
+          return price['product_id'].toString() == product_id &&
+              price['company_id'].toString() == company_id;
+        }).toList();
+
+        List<Map<String, dynamic>> lastPriceCheck =
+            localLastPrices.where((lastPrice) {
+          return lastPrice['product_id'].toString() == product_id &&
+              lastPrice['company_id'].toString() == company_id &&
+              lastPrice['customer_id'].toString() == customer_id;
+        }).toList();
+
+        if (lastPriceCheck.isEmpty) {
+          if (prices.isEmpty) {
+            mutableProduct['price'] = '0';
+          } else if (prices.length == 1) {
+            mutableProduct['price'] = prices[0]['price'].toString();
+          } else {
+            var selectedPrice = prices.firstWhere(
+              (price) => price['price_code'] == price_code,
+              orElse: () => {'price': '0'},
+            );
+            mutableProduct['price'] = selectedPrice['price'].toString();
+          }
+        } else {
+          mutableProduct['price'] = lastPriceCheck[0]['price'].toString();
+        }
+
+        mutableProduct['price'] =
+            double.parse(mutableProduct['price'].toString()).toStringAsFixed(1);
+
+        if (mutableProduct['images'] != null &&
+            mutableProduct['images'].toString().length > 7) {
+          mutableProduct['images'] =
+              "https://aliexpress.ps/quds_laravel/public/storage/${mutableProduct['images'].toString().substring(7)}";
+        }
+
+        double qty = 0.0;
+        int barcodeLength = scanBarcode.toString().length;
+        if (barcodeLength == 20) {
+          qty = int.parse(scanBarcode.substring(7, 13)) / 100;
+        } else if (barcodeLength == 13) {
+          qty = int.parse(scanBarcode.substring(7, 12)) / 1000;
+        } else {
+          qty = double.tryParse(mutableProduct["quantity"].toString()) ?? 0.0;
+        }
+
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => badrcodeController.text = "");
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddProduct(
+              isOnline: isOnline,
+              image: mutableProduct["images"] ?? "",
+              productUnit: mutableProduct["productUnit"] ?? "-",
+              packingNumber: mutableProduct["packingNumber"] ?? "",
+              packingPrice: mutableProduct["packingPrice"] ?? "",
+              productColors: mutableProduct["productColors"] ?? "",
+              checkProductBarcode20or13:
+                  barcodeLength == 20 || barcodeLength == 13,
+              id: mutableProduct["id"].toString(),
+              desc: mutableProduct["description"] ?? "",
+              checkProductBarcode: true,
+              productBarcode: scanBarcode.toString(),
+              name: mutableProduct["p_name"] ?? "Unknown Product",
+              customer_id: widget.name.toString(),
+              price: mutableProduct["price"].toString(),
+              qty: qty.toString(),
+              qtyExist: mutableProduct["quantity"].toString(),
+            ),
+          ),
+        );
+
+        FocusScope.of(context).requestFocus(_barcodeFocusNode);
       } catch (e) {
-        print("121212eee");
-        print(e);
         Navigator.of(context, rootNavigator: true).pop();
         Fluttertoast.showToast(
             msg: "المنتج غير متوفر , الرجاء المحاولة فيما بعد");
@@ -555,34 +578,36 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     }
   }
 
-  dont() {
+  void dont() {
     Navigator.of(context, rootNavigator: true).pop();
     Fluttertoast.showToast(msg: "لديك خطأ ما");
   }
 
-  searchBarcode() async {
+  Future<void> searchBarcode() async {
     var barcode = await barcodeScan();
     setState(() {
-      scanBarcode = barcode.toString();
+      scanBarcode = (barcode ?? '').toString();
     });
     scanBarcode.toString() == "" && dontgo == false ? dont() : search_bar();
   }
 
-  lastStep() {
+  void lastStep() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           content: SizedBox(
-              height: 100,
-              width: 100,
-              child: Center(child: CircularProgressIndicator())),
+            height: 100,
+            width: 100,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         );
       },
     );
     searchBarcode();
   }
 
+  // ------------------- LOCATION -------------------
   Future<void> updateCustomerLocation() async {
     showLoadingDialog();
 
@@ -590,11 +615,11 @@ class _CustomerDetailsState extends State<CustomerDetails> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       int? company_id = prefs.getInt('company_id');
       int? salesman_id = prefs.getInt('salesman_id');
+
       Position position = await _getCurrentLocation();
       double latitude = position.latitude;
       double longitude = position.longitude;
 
-      // API endpoint
       final String url =
           'https://yaghm.com/admin/api/customers/${widget.id.toString()}/location?_method=PUT';
 
@@ -611,20 +636,16 @@ class _CustomerDetailsState extends State<CustomerDetails> {
         body: jsonEncode(data),
       );
 
-      // Close loading dialog
       Navigator.pop(context);
 
       if (response.statusCode == 200) {
-        final responseBody = jsonDecode(response.body);
         showSnackBar("تم تحديث موقع الزبون بنجاح");
       } else {
         showSnackBar("Failed to update location");
-        print('Error: ${response.body}');
       }
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
       showSnackBar("Error: ${e.toString()}");
-      print('Exception: $e');
     }
   }
 
@@ -650,14 +671,13 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     }
 
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+        desiredAccuracy: LocationAccuracy.high);
   }
 
   void showLoadingDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent dismissing dialog by tapping outside
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
           content: Column(
@@ -674,14 +694,12 @@ class _CustomerDetailsState extends State<CustomerDetails> {
   }
 
   void showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  FocusNode n = new FocusNode();
-  var focusNode = FocusNode();
-
+  // ------------------- UI -------------------
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: Main_Color,
@@ -690,12 +708,13 @@ class _CustomerDetailsState extends State<CustomerDetails> {
           key: _scaffoldState,
           drawer: DrawerMain(),
           appBar: PreferredSize(
-              child: AppBarBack(
-                title: type.toString() == "quds"
-                    ? "القدس موبايل"
-                    : "القدس موبايل Vansale",
-              ),
-              preferredSize: Size.fromHeight(50)),
+            child: AppBarBack(
+              title: type.toString() == "quds"
+                  ? "القدس موبايل"
+                  : "القدس موبايل Vansale",
+            ),
+            preferredSize: Size.fromHeight(50),
+          ),
           body: Padding(
             padding: const EdgeInsets.only(top: 20, bottom: 20),
             child: SingleChildScrollView(
@@ -744,19 +763,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                     ),
                                     actions: [
                                       TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
                                         child: Text('خروج'),
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          // print("priceController.text");
-                                          // print(priceController.text);
                                           if (nameController.text == "" ||
                                               phoneNumberController.text ==
                                                   "") {
-                                            // Navigator.of(context, rootNavigator: true).pop();
                                             showDialog(
                                               context: context,
                                               builder: (BuildContext context) {
@@ -769,28 +784,29 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                                   ),
                                                   actions: <Widget>[
                                                     InkWell(
-                                                      onTap: () {
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      },
+                                                      onTap: () =>
+                                                          Navigator.of(context)
+                                                              .pop(),
                                                       child: Container(
                                                         width: 100,
                                                         height: 40,
-                                                        decoration: BoxDecoration(
-                                                            color: Main_Color,
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        10)),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Main_Color,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
                                                         child: Center(
                                                           child: Text(
                                                             "حسنا",
                                                             style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Colors
-                                                                    .white),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
                                                           ),
                                                         ),
                                                       ),
@@ -805,11 +821,12 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                               builder: (BuildContext context) {
                                                 return AlertDialog(
                                                   content: SizedBox(
-                                                      height: 100,
-                                                      width: 100,
-                                                      child: Center(
-                                                          child:
-                                                              CircularProgressIndicator())),
+                                                    height: 100,
+                                                    width: 100,
+                                                    child: Center(
+                                                        child:
+                                                            CircularProgressIndicator()),
+                                                  ),
                                                 );
                                               },
                                             );
@@ -826,6 +843,9 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                             child: Container(
                               width: 120,
                               height: 40,
+                              decoration: BoxDecoration(
+                                  color: Main_Color,
+                                  borderRadius: BorderRadius.circular(10)),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceAround,
@@ -837,21 +857,17 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                         color: Colors.white,
                                         fontSize: 15),
                                   ),
-                                  Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                  )
+                                  Icon(Icons.edit, color: Colors.white),
                                 ],
                               ),
-                              decoration: BoxDecoration(
-                                  color: Main_Color,
-                                  borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
                         )
                       ],
                     ),
                   ),
+
+                  // ---- Search by ID ----
                   Visibility(
                     visible: roleID.toString() == "3" ? false : true,
                     child: Padding(
@@ -860,14 +876,13 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Container(
+                          SizedBox(
                             height: 50,
                             width: 200,
                             child: TextField(
                               controller: idController,
                               textInputAction: TextInputAction.done,
                               textAlign: TextAlign.center,
-                              obscureText: false,
                               decoration: InputDecoration(
                                 hintText: 'بحث عن رقم الصنف',
                                 hintStyle: TextStyle(
@@ -891,11 +906,11 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     content: SizedBox(
-                                        height: 100,
-                                        width: 100,
-                                        child: Center(
-                                            child:
-                                                CircularProgressIndicator())),
+                                      height: 100,
+                                      width: 100,
+                                      child: Center(
+                                          child: CircularProgressIndicator()),
+                                    ),
                                   );
                                 },
                               );
@@ -904,17 +919,18 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                               width: 100,
                               height: 50,
                               decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [
-                                    Color.fromRGBO(83, 89, 219, 1),
-                                    Color.fromRGBO(32, 39, 160, 0.6),
-                                  ]),
-                                  borderRadius: BorderRadius.circular(10)),
+                                gradient: LinearGradient(colors: [
+                                  Color.fromRGBO(83, 89, 219, 1),
+                                  Color.fromRGBO(32, 39, 160, 0.6),
+                                ]),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               child: Center(
-                                child: Text("بحث",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                    )),
+                                child: Text(
+                                  "بحث",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
+                                ),
                               ),
                             ),
                           )
@@ -922,6 +938,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       ),
                     ),
                   ),
+
+                  // ---- Search by barcode ----
                   Visibility(
                     visible: roleID.toString() == "3" ? false : true,
                     child: Padding(
@@ -930,7 +948,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Container(
+                          SizedBox(
                             height: 50,
                             width: 200,
                             child: RawKeyboardListener(
@@ -938,8 +956,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                               onKey: (event) async {
                                 if (event
                                     .isKeyPressed(LogicalKeyboardKey.enter)) {
-                                  SharedPreferences prefs =
-                                      await SharedPreferences.getInstance();
                                   setState(() {
                                     scanBarcode = badrcodeController.text;
                                   });
@@ -948,15 +964,17 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                     builder: (BuildContext context) {
                                       return AlertDialog(
                                         content: SizedBox(
-                                            height: 100,
-                                            width: 100,
-                                            child: Center(
-                                                child:
-                                                    CircularProgressIndicator())),
+                                          height: 100,
+                                          width: 100,
+                                          child: Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                        ),
                                       );
                                     },
                                   );
-                                  setState(() {});
+                                  // you were missing calling search_bar here on enter
+                                  search_bar();
                                 }
                               },
                               child: TextField(
@@ -964,7 +982,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                 textInputAction: TextInputAction.done,
                                 focusNode: _barcodeFocusNode,
                                 textAlign: TextAlign.center,
-                                obscureText: false,
                                 onSubmitted: (value) async {
                                   setState(() {
                                     scanBarcode = badrcodeController.text;
@@ -974,11 +991,12 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                     builder: (BuildContext context) {
                                       return AlertDialog(
                                         content: SizedBox(
-                                            height: 100,
-                                            width: 100,
-                                            child: Center(
-                                                child:
-                                                    CircularProgressIndicator())),
+                                          height: 100,
+                                          width: 100,
+                                          child: Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                        ),
                                       );
                                     },
                                   );
@@ -1011,11 +1029,11 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                 builder: (BuildContext context) {
                                   return AlertDialog(
                                     content: SizedBox(
-                                        height: 100,
-                                        width: 100,
-                                        child: Center(
-                                            child:
-                                                CircularProgressIndicator())),
+                                      height: 100,
+                                      width: 100,
+                                      child: Center(
+                                          child: CircularProgressIndicator()),
+                                    ),
                                   );
                                 },
                               );
@@ -1025,17 +1043,18 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                               width: 100,
                               height: 50,
                               decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [
-                                    Color.fromRGBO(83, 89, 219, 1),
-                                    Color.fromRGBO(32, 39, 160, 0.6),
-                                  ]),
-                                  borderRadius: BorderRadius.circular(10)),
+                                gradient: LinearGradient(colors: [
+                                  Color.fromRGBO(83, 89, 219, 1),
+                                  Color.fromRGBO(32, 39, 160, 0.6),
+                                ]),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               child: Center(
-                                child: Text("بحث",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                    )),
+                                child: Text(
+                                  "بحث",
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
+                                ),
                               ),
                             ),
                           )
@@ -1043,6 +1062,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       ),
                     ),
                   ),
+
+                  // ---- Scan by camera ----
                   Visibility(
                     visible: roleID.toString() == "3" ? false : true,
                     child: Padding(
@@ -1069,6 +1090,13 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                   },
                                   child: Container(
                                     height: 50,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      gradient: LinearGradient(colors: [
+                                        Color.fromRGBO(83, 89, 219, 1),
+                                        Color.fromRGBO(32, 39, 160, 0.6),
+                                      ]),
+                                    ),
                                     child: Center(
                                       child: Text(
                                         "بحث عن طريق الباركود",
@@ -1077,13 +1105,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                             fontSize: 15,
                                             color: Colors.white),
                                       ),
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      gradient: LinearGradient(colors: [
-                                        Color.fromRGBO(83, 89, 219, 1),
-                                        Color.fromRGBO(32, 39, 160, 0.6),
-                                      ]),
                                     ),
                                   ),
                                 ),
@@ -1094,6 +1115,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       ),
                     ),
                   ),
+
+                  // ---- Location buttons ----
                   Padding(
                     padding:
                         const EdgeInsets.only(top: 20, right: 20, left: 20),
@@ -1107,6 +1130,13 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                               onTap: updateCustomerLocation,
                               child: Container(
                                 height: 50,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  gradient: LinearGradient(colors: [
+                                    Color.fromRGBO(83, 89, 219, 1),
+                                    Color.fromRGBO(32, 39, 160, 0.6),
+                                  ]),
+                                ),
                                 child: Center(
                                   child: Text(
                                     "تحديث موقع الزبون",
@@ -1116,20 +1146,11 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                         color: Colors.white),
                                   ),
                                 ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  gradient: LinearGradient(colors: [
-                                    Color.fromRGBO(83, 89, 219, 1),
-                                    Color.fromRGBO(32, 39, 160, 0.6),
-                                  ]),
-                                ),
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 20,
-                        ),
+                        SizedBox(width: 20),
                         Expanded(
                           flex: 1,
                           child: Visibility(
@@ -1137,16 +1158,25 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                             child: InkWell(
                               onTap: () async {
                                 final _url = Uri.parse(
-                                    "https://www.google.com/maps?q=${widget.lattitude.toString()},${widget.longitude.toString()}");
+                                  "https://www.google.com/maps?q=${widget.lattitude.toString()},${widget.longitude.toString()}",
+                                );
                                 if (!await launchUrl(_url,
                                     mode: LaunchMode.externalApplication)) {
                                   Fluttertoast.showToast(
-                                      msg:
-                                          "لم يتم التمكن من الدخول الرابط , الرجاء المحاولة فيما بعد");
+                                    msg:
+                                        "لم يتم التمكن من الدخول الرابط , الرجاء المحاولة فيما بعد",
+                                  );
                                 }
                               },
                               child: Container(
                                 height: 50,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  gradient: LinearGradient(colors: [
+                                    Color.fromRGBO(83, 89, 219, 1),
+                                    Color.fromRGBO(32, 39, 160, 0.6),
+                                  ]),
+                                ),
                                 child: Center(
                                   child: Text(
                                     "رؤية موقع الزبون",
@@ -1156,13 +1186,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                         color: Colors.white),
                                   ),
                                 ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  gradient: LinearGradient(colors: [
-                                    Color.fromRGBO(83, 89, 219, 1),
-                                    Color.fromRGBO(32, 39, 160, 0.6),
-                                  ]),
-                                ),
                               ),
                             ),
                           ),
@@ -1170,9 +1193,11 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                       ],
                     ),
                   ),
+
+                  // ---- Cards ----
                   Padding(
                     padding: const EdgeInsets.only(top: 40),
-                    child: Container(
+                    child: SizedBox(
                       height: 300,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1193,20 +1218,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                         await SharedPreferences.getInstance();
                                     String? type = prefs.getString('type');
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => Products(
-                                                  type: type,
-                                                  id: widget.id,
-                                                  name: widget.name,
-                                                )));
-                                    // Navigator.push(
-                                    //     context,
-                                    //     MaterialPageRoute(
-                                    //         builder: (context) => Categories(
-                                    //               id: widget.id,
-                                    //               name: widget.name,
-                                    //             )));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => Products(
+                                          type: type,
+                                          id: widget.id,
+                                          name: widget.name,
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -1220,13 +1240,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                   my_icon: Icons.money,
                                   navi: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => CatchReceipt(
-                                                  balance: widget.balance,
-                                                  name: widget.name.toString(),
-                                                  id: widget.id,
-                                                )));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CatchReceipt(
+                                          balance: widget.balance,
+                                          name: widget.name.toString(),
+                                          id: widget.id,
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -1245,12 +1267,14 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                   my_icon: Icons.money,
                                   navi: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => AddSarf(
-                                                  name: widget.name.toString(),
-                                                  id: widget.id,
-                                                )));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AddSarf(
+                                          name: widget.name.toString(),
+                                          id: widget.id,
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -1262,14 +1286,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                                   my_icon: Icons.account_balance,
                                   navi: () {
                                     Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) => KashfHesab(
-                                                balance:
-                                                    widget.balance.toString(),
-                                                name: widget.name.toString(),
-                                                customer_id:
-                                                    widget.id.toString())));
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => KashfHesab(
+                                          balance: widget.balance.toString(),
+                                          name: widget.name.toString(),
+                                          customer_id: widget.id.toString(),
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
@@ -1288,16 +1313,28 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     );
   }
 
+  // ------------------- INIT -------------------
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initiatePrefs();
+
+    // Important: auto-open after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleAutoOpenIfNeeded();
+    });
   }
 
   @override
   void dispose() {
     _barcodeFocusNode.dispose();
+    _timer?.cancel();
+    idController.dispose();
+    badrcodeController.dispose();
+    nameController.dispose();
+    phoneNumberController.dispose();
+    focusNode.dispose();
+    n.dispose();
     super.dispose();
   }
 }

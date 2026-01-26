@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:quds_yaghmour/LocalDB/DataBase/DataBase.dart';
 import 'package:quds_yaghmour/LocalDB/Models/catch-model.dart';
@@ -118,34 +119,61 @@ class _SettingsState extends State<Settings> {
                 visible: globals.JUST,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                  child: Container(
+                  child: SizedBox(
                     height: 50,
                     width: double.infinity,
                     child: TextField(
                       controller: idController,
-                      obscureText: false,
-                      onChanged: (_) async {
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        await prefs.setString('store_id', idController.text);
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        // يسمح بالأرقام فقط
+                        FilteringTextInputFormatter.digitsOnly,
+                        // حد أقصى رقمين
+                        LengthLimitingTextInputFormatter(2),
+                      ],
+                      onChanged: (value) async {
+                        // لو حاول إدخال أكثر من رقمين (حماية إضافية)
+                        if (value.length > 2) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'لا يمكن إدخال أكثر من رقمين',
+                                textAlign: TextAlign.right,
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+
+                        // حفظ القيمة فقط إذا كانت صالحة
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('store_id', value);
                       },
                       decoration: InputDecoration(
+                        hintText: "رقم المخزن",
+                        counterText: "", // إخفاء عداد الأحرف
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              BorderSide(color: Color(0xff34568B), width: 2.0),
+                          borderSide: const BorderSide(
+                            color: Color(0xff34568B),
+                            width: 2.0,
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              BorderSide(width: 2.0, color: Color(0xffD6D3D3)),
+                          borderSide: const BorderSide(
+                            width: 2.0,
+                            color: Color(0xffD6D3D3),
+                          ),
                         ),
-                        hintText: "رقم المخزن",
                       ),
                     ),
                   ),
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.only(top: 25, right: 15, left: 15),
                 child: Row(

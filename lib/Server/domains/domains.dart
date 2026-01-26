@@ -24,7 +24,7 @@ class AppLink {
 // ================================= End Prices ========================== //
 
 // ================================= Begin Categories ========================== //
-  static const String categories = "${server}categories";
+  static const String categories = "${server}categories-string-id";
 // ================================= End Categories ========================== //
 
 // ================================= Begin Orders Quds ========================== //

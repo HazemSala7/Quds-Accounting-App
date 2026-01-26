@@ -9,14 +9,22 @@ plugins {
 
 android {
     namespace = "quds.merged.sala7"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
+
+    defaultConfig {
+        applicationId = "quds.merged.sala7"
+        minSdk = flutter.minSdkVersion
+        targetSdk = 36
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
 
     compileOptions {
         // ✅ REQUIRED for qr_code_scanner (core library desugaring)
         isCoreLibraryDesugaringEnabled = true
 
-        // keep your Java version (you are using 17)
+        // Java 17
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -25,16 +33,9 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-    defaultConfig {
-        applicationId = "quds.merged.sala7"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 34
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
-
     buildTypes {
         release {
+            // NOTE: use your real release keystore later
             signingConfig = signingConfigs.getByName("debug")
         }
     }

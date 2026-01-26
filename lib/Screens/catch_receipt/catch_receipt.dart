@@ -881,75 +881,105 @@ class _CatchReceiptState extends State<CatchReceipt> {
                     ),
                   ),
                   Visibility(
-                    visible: cheks_array.length > 0 ? true : false,
+                    visible: cheks_array.isNotEmpty,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 15),
-                      child: Container(
+                      child: SizedBox(
                         height: 80,
                         width: double.infinity,
                         child: ListView.builder(
-                            itemCount: cheks_array.length,
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, int index) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.only(right: 15, left: 15),
-                                child: Stack(
-                                  alignment: Alignment.topLeft,
-                                  children: [
-                                    Container(
-                                      height: 60,
-                                      width: 100,
-                                      child: Center(
-                                        child: Text(
-                                          "${cheks_array[index]}",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Colors.white),
+                          itemCount: cheks_array.length,
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (context, int index) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(right: 15, left: 15),
+                              child: Stack(
+                                alignment: Alignment.topLeft,
+                                children: [
+                                  Container(
+                                    height: 60,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Main_Color,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        "${cheks_array[index]}",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.white,
                                         ),
                                       ),
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          color: Main_Color),
                                     ),
-                                    IconButton(
-                                        padding: EdgeInsets.all(2),
-                                        onPressed: () {
-                                          check_total = check_total -
-                                              int.parse(cheks_array[index]
-                                                  .toString());
-                                          TOTAL.text = check_total.toString();
-                                          cheks_array.removeAt(index);
+                                  ),
+                                  IconButton(
+                                    padding: const EdgeInsets.all(2),
+                                    onPressed: () {
+                                      // ✅ 1) قيمة الشيك (من value_array الأفضل لأنه هو الذي يُرسل للسيرفر)
+                                      final double v = double.tryParse(
+                                              value_array[index].toString()) ??
+                                          double.tryParse(
+                                              cheks_array[index].toString()) ??
+                                          0.0;
 
-                                          var init_value = double.parse(
-                                                  DiscountController.text == ""
-                                                      ? "0"
-                                                      : DiscountController
-                                                          .text) +
-                                              double.parse(
-                                                  CashController.text == ""
-                                                      ? "0"
-                                                      : CashController.text) +
-                                              double.parse(TOTAL.text == ""
-                                                  ? "0"
-                                                  : TOTAL.text);
+                                      setState(() {
+                                        // ✅ 2) تعديل مجموع الشيكات
+                                        check_total -= v;
+                                        if (check_total < 0) check_total = 0;
 
-                                          MAINTOTAL.text =
-                                              init_value.toString();
+                                        TOTAL.text = check_total.toString();
 
-                                          setState(() {});
-                                        },
-                                        icon: Icon(
-                                          Icons.delete,
-                                          size: 20,
-                                          color: Colors.white,
-                                        ))
-                                  ],
-                                ),
-                              );
-                            }),
+                                        // ✅ 3) حذف نفس العنصر من جميع القوائم (مهم جدًا)
+                                        cheks_array.removeAt(index);
+
+                                        if (index < chk_no_array.length)
+                                          chk_no_array.removeAt(index);
+                                        if (index < value_array.length)
+                                          value_array.removeAt(index);
+                                        if (index < date_array.length)
+                                          date_array.removeAt(index);
+                                        if (index < account_num_array.length)
+                                          account_num_array.removeAt(index);
+                                        if (index < bank_num_array.length)
+                                          bank_num_array.removeAt(index);
+
+                                        // ✅ 4) إعادة حساب المجموع النهائي
+                                        final discount = double.tryParse(
+                                                DiscountController.text.isEmpty
+                                                    ? "0"
+                                                    : DiscountController
+                                                        .text) ??
+                                            0.0;
+                                        final cash = double.tryParse(
+                                                CashController.text.isEmpty
+                                                    ? "0"
+                                                    : CashController.text) ??
+                                            0.0;
+                                        final checks = double.tryParse(
+                                                TOTAL.text.isEmpty
+                                                    ? "0"
+                                                    : TOTAL.text) ??
+                                            0.0;
+
+                                        MAINTOTAL.text =
+                                            (discount + cash + checks)
+                                                .toString();
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -1285,6 +1315,13 @@ class _CatchReceiptState extends State<CatchReceipt> {
   TextEditingController ChksController = TextEditingController();
   TextEditingController NotesController = TextEditingController();
   send(pdf) async {
+    // print("cheks_array");
+    // print(cheks_array);
+    // print(cheks_array.length);
+    // print(chk_no_array);
+    // print(chk_no_array.length);
+    // return;
+
     if (MAINTOTAL.text == '') {
       Navigator.of(context, rootNavigator: true).pop();
       showDialog(

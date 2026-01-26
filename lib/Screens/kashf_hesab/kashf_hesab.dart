@@ -59,18 +59,18 @@ class _KashfHesabState extends State<KashfHesab> {
             : Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(left: 20, top: 10),
+                    padding: const EdgeInsets.only(left: 10, top: 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(4.0),
                           child: Row(
                             children: [
                               Text(
                                 "${widget.name.length > 14 ? widget.name.substring(0, 14) + '...' : widget.name} : ",
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18),
+                                    fontWeight: FontWeight.bold, fontSize: 15),
                               ),
                               Text(
                                 "₪${widget.balance}",
@@ -119,7 +119,7 @@ class _KashfHesabState extends State<KashfHesab> {
                   ),
                   Padding(
                     padding:
-                        const EdgeInsets.only(right: 25, left: 25, top: 15),
+                        const EdgeInsets.only(right: 25, left: 10, top: 15),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -238,6 +238,8 @@ class _KashfHesabState extends State<KashfHesab> {
                                         .toString();
 
                                     return KashfCard(
+                                      customerID: widget.customer_id.toString(),
+                                      customerName: widget.name.toString(),
                                       actions: listPDF[index]['action'] ?? [],
                                       shekat: listPDF[index]['shekat'] ?? [],
                                       action_id:
@@ -265,7 +267,10 @@ class _KashfHesabState extends State<KashfHesab> {
                                           : "0",
                                       date: listPDF[index]['action_date'] ?? "",
                                       notes: notes,
-                                      layoutWidths: const KashfLayout(
+                                      layoutWidths: KashfLayout(
+                                        customerID:
+                                            widget.customer_id.toString(),
+                                        customerName: widget.name.toString(),
                                         balance: 70,
                                         mnh: 50,
                                         lah: 50,
