@@ -115,7 +115,10 @@ class _KashfCardState extends State<KashfCard> {
               // البيان (clickable when "مبيعات")
               InkWell(
                 onTap: () {
-                  if (widget.bayan == "مبيعات") {
+                  if (widget.bayan == "مبيعات" ||
+                      widget.bayan == "مشتريات" ||
+                      widget.bayan == "مردرد مشتريات" ||
+                      widget.bayan == "مردرد مبيعات") {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -128,7 +131,7 @@ class _KashfCardState extends State<KashfCard> {
                           orderNotes: "",
                           deliveryDate: "",
                           customer_name: widget.customerName,
-                          order_total: 0.0,
+                          order_total: double.parse(widget.mnh.toString()),
                           f_code: "2",
                           id: widget.action_id,
                         ),

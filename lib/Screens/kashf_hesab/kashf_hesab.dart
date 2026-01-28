@@ -1184,6 +1184,8 @@ class _KashfHesabState extends State<KashfHesab> {
     try {
       var url =
           "https://yaghm.com/admin/api/statments/${company_id.toString()}/${widget.customer_id.toString()}/${order_kashf_from_new_to_old ? "desc" : "asc"}?page=$_page";
+      print("url");
+      print(url);
       final res = await http.get(Uri.parse(url));
       setState(() {
         listPDF = json.decode(res.body)["statments"]["data"];
