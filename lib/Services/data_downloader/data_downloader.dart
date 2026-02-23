@@ -290,10 +290,12 @@ class DataDownloader {
       Fluttertoast.showToast(msg: 'No products found.');
       return;
     }
+    print("1.0");
 
     Fluttertoast.showToast(msg: 'تم تنزيل المنتجات بنجاح!');
     message.value = "تنزيل الأسعار ....";
     progress.value = 0.5; // ✅ Move to next section
+    print("1.1");
 
     // ✅ Step 3: Download prices
     var prices =
@@ -302,6 +304,7 @@ class DataDownloader {
       await _savePrices(prices["prices"]);
       Fluttertoast.showToast(msg: 'تم تنزيل الأسعار بنجاح!');
     }
+    print("1.2");
 
     message.value = "تنزيل سندات القبض ....";
     progress.value = 0.6; // ✅ Progress for Catches

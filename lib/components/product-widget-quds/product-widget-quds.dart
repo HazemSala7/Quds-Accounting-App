@@ -47,6 +47,8 @@ class ProductCardQuds extends StatefulWidget {
 
   /// 🔁 Reusable method to build image from network or file
   static Widget buildImage(String? imagePath) {
+    print("imagePath");
+    print(imagePath);
     if (imagePath == null || imagePath.trim().isEmpty) {
       return Image.asset("assets/quds_logo.jpeg", fit: BoxFit.fill);
     }

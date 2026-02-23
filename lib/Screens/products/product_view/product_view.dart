@@ -26,18 +26,20 @@ class ProductView extends StatelessWidget {
                   child: isOnline
                       ? Image.network(
                           image,
-                          fit: BoxFit.fill,
+                          fit: BoxFit
+                              .contain, // 🔥 prevents aggressive stretching
+                          filterQuality:
+                              FilterQuality.high, // 🔥 improves scaling quality
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Center(
-                              child: CircularProgressIndicator(
-                                backgroundColor: Main_Color,
-                              ),
+                              child:
+                                  CircularProgressIndicator(color: Main_Color),
                             );
                           },
                           errorBuilder: (context, error, stackTrace) =>
                               Image.asset("assets/quds_logo.jpeg",
-                                  fit: BoxFit.cover),
+                                  fit: BoxFit.contain),
                         )
                       : ProductCardQuds.buildImage(image)),
               Padding(

@@ -1586,34 +1586,62 @@ class _AddOrderState extends State<AddOrder> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? macAddressPrinter = prefs.getString('mac_address_printer');
     if (!mounted) return;
-    setState(() {
-      isProcessing = true;
-    });
+    
     try {
+      // Check if already connected
+      bool? isConnected = await bluetooth.isConnected;
+      if (isConnected == true) {
+        print("✅ Already connected to printer");
+        return;
+      }
+
+      print("🔍 Searching for bonded devices...");
       List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
+      
+      print("📱 Found ${devices.length} bonded devices");
+
       BluetoothDevice? targetDevice = devices.firstWhere(
         (d) => d.address == macAddress,
-        orElse: () => BluetoothDevice("hazem", macAddressPrinter),
+        orElse: () => BluetoothDevice("Printer", macAddressPrinter ?? macAddress),
       );
 
       if (targetDevice != null) {
-        await bluetooth.connect(targetDevice);
-        if (!mounted) return;
+        print("✅ Found printer: ${targetDevice.name} (${targetDevice.address})");
+        print("🔌 Connecting to printer...");
+        
+        await bluetooth.connect(targetDevice).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw TimeoutException(
+              'Connection timeout - printer may be off or out of range'),
+        );
+        
+        // Give it a moment to establish connection
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Verify the connection was successful
+        bool? connectedCheck = await bluetooth.isConnected;
+        if (connectedCheck != true) {
+          throw Exception("Connection established but verification failed");
+        }
+
+        print("✅ Connected to printer");
       } else {
-        if (!mounted) return;
-      }
-    } catch (e) {
-      if (mounted) {
+        print("❌ No device with MAC address $macAddress");
         Fluttertoast.showToast(
             msg: "أنت لا تمتلك طابعة zebra",
             backgroundColor: Colors.green,
             fontSize: 18);
+        throw Exception("Printer device not found");
       }
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        isProcessing = false;
-      });
+    } catch (e) {
+      print("❌ Error connecting to device: $e");
+      if (mounted) {
+        Fluttertoast.showToast(
+            msg: "خطأ في الاتصال بالطابعة: $e",
+            backgroundColor: Colors.red,
+            fontSize: 18);
+      }
+      rethrow;
     }
   }
 
@@ -1817,37 +1845,17 @@ class _AddOrderState extends State<AddOrder> {
   }
 
   Future<void> _disconnectFromAndroidDevice() async {
-    if (!mounted) return; // Ensure the widget is still in the tree
-    setState(() {
-      isProcessing = true;
-    });
-
     try {
-      // Explicitly check if the device is connected
       bool? isConnected = await bluetooth.isConnected;
-      if (isConnected!) {
+      if (isConnected == true) {
+        print("🔌 Disconnecting from printer...");
         await bluetooth.disconnect();
-        if (!mounted) return; // Ensure the widget is still in the tree
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Device disconnected successfully")),
-        );
-      } else {
-        if (!mounted) return; // Ensure the widget is still in the tree
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No device is currently connected")),
-        );
+        // Add delay to ensure disconnection completes
+        await Future.delayed(const Duration(milliseconds: 300));
+        print("✅ Disconnected from printer");
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error disconnecting from device: $e")),
-        );
-      }
-    } finally {
-      if (!mounted) return; // Ensure the widget is still in the tree
-      setState(() {
-        isProcessing = false;
-      });
+      print("⚠️ Error disconnecting from device: $e");
     }
   }
 
@@ -1865,32 +1873,61 @@ class _AddOrderState extends State<AddOrder> {
     required String discount,
     required String finalTotal,
   }) async {
-    await _connectToAndroidDevice(macAddress);
-
-    final invoiceZPL = generateInvoiceZPL(
-      invoiceHeader: invoiceHeader,
-      userType: userType,
-      items: items,
-      invoiceNumber: invoiceNumber,
-      licensedOperator: licensedOperator,
-      date: date,
-      time: time,
-      customerName: customerName,
-      salesManNumber: salesManNumber,
-      discount: discount,
-      finalTotal: finalTotal,
-    );
-
     try {
-      bluetooth.write(invoiceZPL); // Pass the string directly
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text("Invoice printed successfully!")),
-      // );
-      await _disconnectFromAndroidDevice();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error printing *: $e")),
+      await _connectToAndroidDevice(macAddress);
+
+      // Verify connection before printing
+      bool? isConnected = await bluetooth.isConnected;
+      if (isConnected != true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to connect to printer")),
+          );
+        }
+        return;
+      }
+
+      final invoiceZPL = generateInvoiceZPL(
+        invoiceHeader: invoiceHeader,
+        userType: userType,
+        items: items,
+        invoiceNumber: invoiceNumber,
+        licensedOperator: licensedOperator,
+        date: date,
+        time: time,
+        customerName: customerName,
+        salesManNumber: salesManNumber,
+        discount: discount,
+        finalTotal: finalTotal,
       );
+
+      print("📄 Generated ZPL length: ${invoiceZPL.length} characters");
+      print("📤 Writing ZPL to printer...");
+
+      bool writeSuccess = await bluetooth.write(invoiceZPL);
+      
+      print("✍️ Write result: $writeSuccess");
+      
+      if (!writeSuccess) {
+        throw Exception("Failed to write data to printer");
+      }
+
+      // Wait for printer to process the data
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invoice printed successfully!")),
+        );
+      }
+    } catch (e) {
+      print("❌ Printing error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error printing invoice: $e")),
+        );
+      }
+    } finally {
       await _disconnectFromAndroidDevice();
     }
   }

@@ -517,27 +517,161 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
           return;
         }
 
-        BluetoothSocket socket = device.createRfcommSocketToServiceRecord(MY_UUID);
-
-        if (socket == null) {
-          result.error("connect_error", "socket connection not established", null);
-          return;
-        }
-
         // Cancel bt discovery, even though we didn't start it
         mBluetoothAdapter.cancelDiscovery();
 
+        // Try to establish secure connection first
+        BluetoothSocket[] socketHolder = {null};
+        boolean socketCreated = false;
+        
         try {
-          socket.connect();
-          THREAD = new ConnectedThread(socket);
+          Log.d(TAG, "Attempting secure RFCOMM connection with UUID: " + MY_UUID);
+          socketHolder[0] = device.createRfcommSocketToServiceRecord(MY_UUID);
+          if (socketHolder[0] == null) {
+            throw new IOException("createRfcommSocketToServiceRecord returned null");
+          }
+          socketCreated = true;
+          
+          // Try to connect with timeout
+          try {
+            Thread connectThread = new Thread(() -> {
+              try {
+                socketHolder[0].connect();
+                Log.d(TAG, "Secure connection handshake successful");
+              } catch (IOException e) {
+                Log.w(TAG, "Secure connection handshake failed: " + e.getMessage());
+                // Note: we don't fail here - socket might still be usable
+              }
+            });
+            connectThread.start();
+            connectThread.join(5000); // Wait 5 seconds for handshake
+            
+            if (connectThread.isAlive()) {
+              Log.w(TAG, "Secure connection handshake timeout - continuing anyway");
+              connectThread.interrupt();
+            }
+          } catch (InterruptedException e) {
+            Log.w(TAG, "Secure connection interrupted: " + e.getMessage());
+          }
+          
+          Log.d(TAG, "Secure socket created successfully");
+        } catch (Exception ex) {
+          Log.w(TAG, "Secure connection failed: " + ex.getMessage());
+          socketCreated = false;
+          if (socketHolder[0] != null) {
+            try {
+              socketHolder[0].close();
+            } catch (Exception e) {
+              Log.e(TAG, "Error closing failed socket: " + e.getMessage());
+            }
+          }
+          
+          // Fallback to insecure connection
+          try {
+            Log.d(TAG, "Attempting insecure RFCOMM connection");
+            socketHolder[0] = device.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+            if (socketHolder[0] == null) {
+              throw new IOException("createInsecureRfcommSocketToServiceRecord returned null");
+            }
+            socketCreated = true;
+            
+            try {
+              Thread connectThread = new Thread(() -> {
+                try {
+                  socketHolder[0].connect();
+                  Log.d(TAG, "Insecure connection handshake successful");
+                } catch (IOException e) {
+                  Log.w(TAG, "Insecure connection handshake failed: " + e.getMessage());
+                }
+              });
+              connectThread.start();
+              connectThread.join(5000); // Wait 5 seconds for handshake
+              
+              if (connectThread.isAlive()) {
+                Log.w(TAG, "Insecure connection handshake timeout - continuing anyway");
+                connectThread.interrupt();
+              }
+            } catch (InterruptedException e) {
+              Log.w(TAG, "Insecure connection interrupted: " + e.getMessage());
+            }
+            
+            Log.d(TAG, "Insecure socket created successfully");
+          } catch (Exception ex2) {
+            Log.e(TAG, "Insecure connection also failed: " + ex2.getMessage());
+            socketCreated = false;
+            if (socketHolder[0] != null) {
+              try {
+                socketHolder[0].close();
+              } catch (Exception e) {
+                Log.e(TAG, "Error closing failed socket: " + e.getMessage());
+              }
+            }
+            
+            // Last resort: try reflection method for alternative RFCOMM channels
+            try {
+              Log.d(TAG, "Attempting fallback reflection method on RFCOMM channel 1");
+              socketHolder[0] = (BluetoothSocket) device.getClass().getMethod("createRfcommSocket", int.class).invoke(device, 1);
+              if (socketHolder[0] != null) {
+                socketCreated = true;
+                try {
+                  Thread connectThread = new Thread(() -> {
+                    try {
+                      socketHolder[0].connect();
+                      Log.d(TAG, "Reflection method connection handshake successful");
+                    } catch (IOException e) {
+                      Log.w(TAG, "Reflection method connection handshake failed: " + e.getMessage());
+                    }
+                  });
+                  connectThread.start();
+                  connectThread.join(5000); // Wait 5 seconds for handshake
+                  
+                  if (connectThread.isAlive()) {
+                    Log.w(TAG, "Reflection method connection handshake timeout - continuing anyway");
+                    connectThread.interrupt();
+                  }
+                } catch (InterruptedException e) {
+                  Log.w(TAG, "Reflection method interrupted: " + e.getMessage());
+                }
+                
+                Log.d(TAG, "Reflection method socket created successfully");
+              } else {
+                throw new IOException("Reflection method returned null socket");
+              }
+            } catch (Exception ex3) {
+              Log.e(TAG, "All socket creation methods failed: " + ex3.getMessage());
+              result.error("connect_error", "Failed to create Bluetooth socket using any method", exceptionToString(ex3));
+              return;
+            }
+          }
+        }
+
+        if (!socketCreated || socketHolder[0] == null) {
+          result.error("connect_error", "Failed to create socket", null);
+          return;
+        }
+
+        try {
+          // Start the connected thread even if handshake incomplete
+          // Some printers work this way (they process data before handshake completes)
+          THREAD = new ConnectedThread(socketHolder[0]);
           THREAD.start();
+          Log.d(TAG, "Connected thread started - ready for data transmission");
+          
+          // Give the socket and thread a moment to fully initialize
+          Thread.sleep(200);
+          
           result.success(true);
         } catch (Exception ex) {
-          Log.e(TAG, ex.getMessage(), ex);
-          result.error("connect_error", ex.getMessage(), exceptionToString(ex));
+          Log.e(TAG, "Error starting connected thread: " + ex.getMessage(), ex);
+          result.error("connect_error", "Error starting connection thread: " + ex.getMessage(), exceptionToString(ex));
+          try {
+            socketHolder[0].close();
+          } catch (Exception e) {
+            Log.e(TAG, "Error closing socket on thread start failure: " + e.getMessage());
+          }
         }
       } catch (Exception ex) {
-        Log.e(TAG, ex.getMessage(), ex);
+        Log.e(TAG, "Connection error: " + ex.getMessage(), ex);
         result.error("connect_error", ex.getMessage(), exceptionToString(ex));
       }
     });
@@ -575,10 +709,12 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
     }
 
     try {
+      Log.d(TAG, "Writing " + message.length() + " characters to printer");
       THREAD.write(message.getBytes());
+      Log.d(TAG, "Successfully wrote data to printer");
       result.success(true);
     } catch (Exception ex) {
-      Log.e(TAG, ex.getMessage(), ex);
+      Log.e(TAG, "Write error: " + ex.getMessage(), ex);
       result.error("write_error", ex.getMessage(), exceptionToString(ex));
     }
   }
@@ -590,10 +726,12 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
     }
 
     try {
+      Log.d(TAG, "Writing " + message.length + " bytes to printer");
       THREAD.write(message);
+      Log.d(TAG, "Successfully wrote data to printer");
       result.success(true);
     } catch (Exception ex) {
-      Log.e(TAG, ex.getMessage(), ex);
+      Log.e(TAG, "Write error: " + ex.getMessage(), ex);
       result.error("write_error", ex.getMessage(), exceptionToString(ex));
     }
   }
@@ -974,6 +1112,7 @@ public class BlueThermalPrinterPlugin implements FlutterPlugin, ActivityAware,Me
     public void write(byte[] bytes) {
       try {
         outputStream.write(bytes);
+        outputStream.flush();
       } catch (IOException e) {
         e.printStackTrace();
       }

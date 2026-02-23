@@ -1347,6 +1347,7 @@ class _ProductsState extends State<Products> {
       var url = type == "quds"
           ? "${AppLink.allProductsProducts}/${company_id.toString()}/${salesman_id.toString()}/${widget.id.toString()}/${code_price}?page=$_page${hideProductLessThan0 ? "&hide=hide" : ""}"
           : "https://yaghm.com/admin/api/products_vansale/${company_id.toString()}/${salesman_id.toString()}/${widget.id.toString()}/${code_price}?page=$_page";
+      print(url);
       final res = await http.get(Uri.parse(url));
       setState(() {
         _posts = type.toString() == "quds"

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -548,30 +549,19 @@ class _OrdersDetailsState extends State<OrdersDetails> {
     }
   }
 
-  Future<void> _disconnectFromAndroidDevice() async {
-    if (!mounted) return;
-    setState(() => isProcessing = true);
-
+  // Disconnect without showing snackbars (used after printing)
+  Future<void> _disconnectFromAndroidDeviceSilently() async {
     try {
       bool? isConnected = await bluetooth.isConnected;
       if (isConnected == true) {
+        print("🔌 Disconnecting from printer...");
         await bluetooth.disconnect();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Device disconnected successfully")));
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("No device is currently connected")));
+        // Add delay to ensure disconnection completes
+        await Future.delayed(const Duration(milliseconds: 300));
+        print("✅ Disconnected from printer");
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error disconnecting from device: $e")));
-      }
-    } finally {
-      if (!mounted) return;
-      setState(() => isProcessing = false);
+      print("⚠️ Error disconnecting from device: $e");
     }
   }
 
@@ -580,23 +570,177 @@ class _OrdersDetailsState extends State<OrdersDetails> {
     String? macAddressPrinter = prefs.getString('mac_address_printer');
 
     if (!mounted) return;
-    setState(() => isProcessing = true);
 
     try {
-      List<BluetoothDevice> devices = await bluetooth.getBondedDevices();
-      BluetoothDevice? targetDevice = devices.firstWhere(
-        (d) => d.address == macAddress,
-        orElse: () => BluetoothDevice("hazem", macAddressPrinter),
-      );
+      // Check if there's a valid MAC address
+      String effectiveMacAddress =
+          macAddress.isNotEmpty ? macAddress : (macAddressPrinter ?? '');
 
-      if (targetDevice != null) {
-        await bluetooth.connect(targetDevice);
+      if (effectiveMacAddress.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("No printer MAC address configured")),
+          );
+        }
+        return;
       }
-    } catch (_) {
-      // swallow and continue
-    } finally {
-      if (!mounted) return;
-      setState(() => isProcessing = false);
+
+      // Check if already connected to the same device
+      bool? isConnected = await bluetooth.isConnected;
+      if (isConnected == true) {
+        print("✅ Already connected to printer");
+        return;
+      }
+
+      print("🔍 Searching for bonded devices...");
+      List<BluetoothDevice> devices = [];
+
+      try {
+        // Add timeout to getBondedDevices call
+        devices = await bluetooth.getBondedDevices().timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            print(
+                "⏱️ Timeout waiting for bonded devices, will try direct connection");
+            throw TimeoutException('getBondedDevices timed out');
+          },
+        );
+        print("📱 Found ${devices.length} bonded devices");
+        for (var device in devices) {
+          print("  - ${device.name} (${device.address})");
+        }
+      } on TimeoutException catch (e) {
+        print("⚠️ Could not get bonded devices list: $e");
+        print("🔌 Will attempt direct connection to $effectiveMacAddress");
+        // Create device object directly for connection
+        BluetoothDevice directDevice = BluetoothDevice(
+          "Printer",
+          effectiveMacAddress,
+        );
+        print("🔌 Connecting to printer directly...");
+        try {
+          await bluetooth.connect(directDevice).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException(
+                  'Connection timeout - printer may be off or out of range');
+            },
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+          print("✅ Connected to printer");
+        } catch (connectError) {
+          print("❌ Failed to connect: $connectError");
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text("Failed to connect to printer: $connectError")),
+            );
+          }
+          rethrow;
+        }
+        return;
+      } catch (e) {
+        print("⚠️ Error getting bonded devices: $e");
+        print("🔌 Will attempt direct connection to $effectiveMacAddress");
+        // Create device object directly for connection
+        BluetoothDevice directDevice = BluetoothDevice(
+          "Printer",
+          effectiveMacAddress,
+        );
+        print("🔌 Connecting to printer directly...");
+        try {
+          await bluetooth.connect(directDevice).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException(
+                  'Connection timeout - printer may be off or out of range');
+            },
+          );
+          await Future.delayed(const Duration(milliseconds: 500));
+          print("✅ Connected to printer");
+        } catch (connectError) {
+          print("❌ Failed to connect: $connectError");
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text("Failed to connect to printer: $connectError")),
+            );
+          }
+          rethrow;
+        }
+        return;
+      }
+
+      if (devices.isEmpty) {
+        print("⚠️ No bonded devices found");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    "No bonded Bluetooth devices found. Please pair your printer first.")),
+          );
+        }
+        return;
+      }
+
+      BluetoothDevice? targetDevice;
+      try {
+        targetDevice = devices.firstWhere(
+          (d) => d.address == effectiveMacAddress,
+        );
+      } catch (e) {
+        targetDevice = null;
+      }
+
+      if (targetDevice == null) {
+        print("❌ Printer device not found: $effectiveMacAddress");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text("Printer device not found: $effectiveMacAddress")),
+          );
+        }
+        return;
+      }
+
+      print("✅ Found printer: ${targetDevice.name} (${targetDevice.address})");
+      print("🔌 Connecting to printer...");
+
+      try {
+        await bluetooth.connect(targetDevice).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw TimeoutException(
+              'Connection timeout - printer may be off or out of range'),
+        );
+        
+        // Give it a moment to establish connection
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Verify the connection was successful
+        bool? connectedCheck = await bluetooth.isConnected;
+        if (connectedCheck != true) {
+          throw Exception("Connection established but verification failed");
+        }
+
+        print("✅ Connected to printer");
+      } catch (e) {
+        print("❌ Failed to connect: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to connect to printer: $e")),
+          );
+        }
+        rethrow;
+      }
+    } catch (e) {
+      print("❌ Error in connection process: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Connection failed: $e")),
+        );
+      }
+      rethrow;
     }
   }
 
@@ -770,27 +914,70 @@ class _OrdersDetailsState extends State<OrdersDetails> {
     required String discount,
     required String finalTotal,
   }) async {
-    await _connectToAndroidDevice(macAddress);
-
-    final invoiceZPL = generateInvoiceZPL(
-      invoiceHeader: invoiceHeader,
-      userType: userType,
-      items: items,
-      invoiceNumber: invoiceNumber,
-      licensedOperator: licensedOperator,
-      date: date,
-      time: time,
-      customerName: customerName,
-      salesManNumber: salesManNumber,
-      discount: discount,
-      finalTotal: finalTotal,
-    );
-
     try {
-      bluetooth.write(invoiceZPL);
-      await _disconnectFromAndroidDevice();
+      if (!mounted) return;
+      setState(() => isProcessing = true);
+
+      // Connect to the device
+      await _connectToAndroidDevice(macAddress);
+
+      // Verify connection before printing
+      bool? isConnected = await bluetooth.isConnected;
+      if (isConnected != true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to connect to printer")),
+          );
+        }
+        return;
+      }
+
+      final invoiceZPL = generateInvoiceZPL(
+        invoiceHeader: invoiceHeader,
+        userType: userType,
+        items: items,
+        invoiceNumber: invoiceNumber,
+        licensedOperator: licensedOperator,
+        date: date,
+        time: time,
+        customerName: customerName,
+        salesManNumber: salesManNumber,
+        discount: discount,
+        finalTotal: finalTotal,
+      );
+
+      print("📄 Generated ZPL length: ${invoiceZPL.length} characters");
+      print("📤 Writing ZPL to printer...");
+
+      // Write the ZPL to the printer
+      bool writeSuccess = await bluetooth.write(invoiceZPL);
+      
+      print("✍️ Write result: $writeSuccess");
+      
+      if (!writeSuccess) {
+        throw Exception("Failed to write data to printer");
+      }
+
+      // Wait for printer to process the data
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invoice printed successfully!")),
+        );
+      }
     } catch (e) {
-      await _disconnectFromAndroidDevice();
+      print("❌ Printing error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error printing invoice: $e")),
+        );
+      }
+    } finally {
+      // Disconnect silently without showing additional snackbars
+      await _disconnectFromAndroidDeviceSilently();
+      if (!mounted) return;
+      setState(() => isProcessing = false);
     }
   }
 
@@ -830,8 +1017,7 @@ class _OrdersDetailsState extends State<OrdersDetails> {
 
     final StringBuffer zpl = StringBuffer();
 
-    zpl.write("""
-^XA
+    zpl.write("""^XA
 ^CI28
 ^CW1,E:TT0003M_.FNT
 ^LL${paperHeight}
@@ -847,27 +1033,23 @@ $invoiceHeader
     if (userType == "quds" ||
         licensedOperator == "999999999" ||
         licensedOperator.isEmpty) {
-      zpl.write("""
-^FO160,230^A1N,30,30^FD رقم: ${widget.id.toString()}^FS
+      zpl.write("""^FO160,230^A1N,30,30^FD رقم: ${widget.id.toString()}^FS
 """);
     } else {
-      zpl.write("""
-^FO160,230^A1N,30,30^FDفاتورة ضريبية رقم: $invoiceNumber^FS
+      zpl.write("""^FO160,230^A1N,30,30^FDفاتورة ضريبية رقم: $invoiceNumber^FS
 ^FO20,270^A1N,30,30^FD${widget.printed.toString() == "1" ? "Copy" : "Original"}^FS
 ^FO360,270^A1N,30,30^FDمشغل مرخص^FS
 ^FO360,310^A1N,30,30^FD$licensedOperator^FS
 """);
     }
 
-    zpl.write("""
-^FO5,445^GB500,3,3^FS
+    zpl.write("""^FO5,445^GB500,3,3^FS
 ^FO5,445^A1N,27,27^FDالاسم               الكمية       السعر   المجموع^FS
 ^FO5,475^GB500,3,3^FS
 """);
 
     int tableStartY = 480;
-    zpl.write("""
-^FO200,${tableStartY}^GB3,${itemSectionHeight},3^FS
+    zpl.write("""^FO200,${tableStartY}^GB3,${itemSectionHeight},3^FS
 ^FO100,${tableStartY}^GB3,${itemSectionHeight},3^FS
 ^FO310,${tableStartY}^GB3,${itemSectionHeight},3^FS
 """);
@@ -881,8 +1063,7 @@ $invoiceHeader
       String price = item.price.toStringAsFixed(1).padLeft(6);
       String total = item.total.toStringAsFixed(1).padLeft(6);
 
-      zpl.write("""
-^FO330,$yPosition^A1N,21,21^FD$name^FS
+      zpl.write("""^FO330,$yPosition^A1N,21,21^FD$name^FS
 ^FO210,$yPosition^A1N,28,28^FD$quantity^FS
 ^FO110,$yPosition^A1N,28,28^FD$price^FS
 ^FO10,$yPosition^A1N,28,28^FD$total^FS
@@ -891,8 +1072,7 @@ $invoiceHeader
 
       if (int.parse(item.bonus.toString()) != 0 &&
           item.bonus.toString() != "null") {
-        zpl.write("""
-^FO330,$yPosition^A1N,21,21^FD$name^FS
+        zpl.write("""^FO330,$yPosition^A1N,21,21^FD$name^FS
 ^FO210,$yPosition^A1N,28,28^FD${item.bonus.toString()}^FS
 ^FO110,$yPosition^A1N,28,28^FD0^FS
 ^FO10,$yPosition^A1N,28,28^FD0^FS
@@ -904,8 +1084,7 @@ $invoiceHeader
     final double computedTotal =
         items.fold<double>(0, (sum, item) => sum + item.total);
 
-    zpl.write("""
-^FO20,$yPosition^GB550,3,3^FS
+    zpl.write("""^FO20,$yPosition^GB550,3,3^FS
 ^FO20,${yPosition + 20}^A1N,30,30^FDالمجموع:        ${computedTotal.toStringAsFixed(1)}^FS
 ^FO330,${yPosition + 20}^A1N,30,30^FDرقم المندوب^FS
 ^FO20,${yPosition + 60}^A1N,30,30^FDالخصم:          ${discount}^FS
@@ -915,7 +1094,17 @@ $invoiceHeader
 ^XZ
 """);
 
-    return zpl.toString();
+    String finalZPL = zpl.toString();
+    
+    // Validate ZPL format
+    if (!finalZPL.startsWith('^XA')) {
+      print("⚠️ Warning: ZPL doesn't start with ^XA");
+    }
+    if (!finalZPL.endsWith('^XZ\n')) {
+      print("⚠️ Warning: ZPL doesn't end with ^XZ");
+    }
+    
+    return finalZPL;
   }
 
   getOrders() async {
@@ -1103,13 +1292,9 @@ $invoiceHeader
   }
 
   pdfFatoraA4(var cartItems) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? shop_no = prefs.getString('shop_no');
     var now = DateTime.now();
     var formatterDate = DateFormat('yyyy-MM-dd');
-    var formatterTime = DateFormat('kk:mm:ss');
     String actualDate = formatterDate.format(now);
-    String actualTime = formatterTime.format(now);
     final double computedTotal =
         fatoraItems.fold<double>(0, (sum, item) => sum + item.total);
     var arabicFont =
