@@ -129,298 +129,471 @@ class _AddOrderState extends State<AddOrder> {
               child: Column(
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.only(top: 20, right: 15, left: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          type.toString() == "quds"
-                              ? "قيمة الطلبية"
-                              : "قيمه الفاتورة",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 15, bottom: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xff34568B).withOpacity(0.08),
+                              Color(0xff34568B).withOpacity(0.03),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        controller: valueController,
-                        obscureText: false,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: type.toString() == "quds"
-                              ? "قيمة الطلبية"
-                              : "قيمه الفاتورة",
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              type.toString() == "quds" ? "قيمة الطلبية" : "قيمه الفاتورة",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  "₪",
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xff34568B),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: valueController,
+                                    obscureText: false,
+                                    readOnly: true,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xff34568B),
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: type.toString() == "quds"
+                                          ? "قيمة الطلبية"
+                                          : "قيمه الفاتورة",
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.only(top: 20, right: 15, left: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "الخصم",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d{0,2}')),
-                        ],
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
-                        controller: DiscountController,
-                        obscureText: false,
-                        onChanged: (_) {
-                          if (DiscountController.text == "") {
-                            setState(() {
-                              discountPercentageController.text = "0";
-                              valueafterController.text = valueController.text;
-                            });
-                          } else {
-                            setState(() {
-                              var discountAmount =
-                                  double.parse(DiscountController.text);
-                              var total = double.parse(valueController.text);
-                              var discountPercent =
-                                  (discountAmount / total) * 100;
-                              discountPercentageController.text =
-                                  discountPercent.toStringAsFixed(2);
-                              var totalAfterDiscount = total - discountAmount;
-                              valueafterController.text =
-                                  totalAfterDiscount.toString();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "الخصم",
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "الخصم",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.local_offer,
+                                    color: Color(0xff34568B), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d*\.?\d{0,2}')),
+                                    ],
+                                    keyboardType: TextInputType.numberWithOptions(
+                                        decimal: true),
+                                    controller: DiscountController,
+                                    obscureText: false,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                    onChanged: (_) {
+                                      if (DiscountController.text == "") {
+                                        setState(() {
+                                          discountPercentageController.text = "0";
+                                          valueafterController.text =
+                                              valueController.text;
+                                        });
+                                      } else {
+                                        setState(() {
+                                          var discountAmount = double.parse(
+                                              DiscountController.text);
+                                          var total =
+                                              double.parse(valueController.text);
+                                          var discountPercent =
+                                              (discountAmount / total) * 100;
+                                          discountPercentageController.text =
+                                              discountPercent
+                                                  .toStringAsFixed(2);
+                                          var totalAfterDiscount =
+                                              total - discountAmount;
+                                          valueafterController.text =
+                                              totalAfterDiscount.toString();
+                                        });
+                                      }
+                                    },
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "الخصم",
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.only(top: 20, right: 15, left: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "نسبة الخصم",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d{0,2}')),
-                        ],
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
-                        controller: discountPercentageController,
-                        obscureText: false,
-                        onChanged: (_) {
-                          if (discountPercentageController.text == "") {
-                            setState(() {
-                              DiscountController.text = "0";
-                              valueafterController.text = valueController.text;
-                            });
-                          } else {
-                            setState(() {
-                              var discountPercent = double.parse(
-                                  discountPercentageController.text);
-                              var total = double.parse(valueController.text);
-                              var discountAmount =
-                                  (discountPercent / 100) * total;
-                              DiscountController.text =
-                                  discountAmount.toString();
-                              var totalAfterDiscount = total - discountAmount;
-                              valueafterController.text =
-                                  totalAfterDiscount.toString();
-                            });
-                          }
-                        },
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "نسبة الخصم",
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "نسبة الخصم",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.percent,
+                                    color: Color(0xff34568B), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp(r'^\d*\.?\d{0,2}')),
+                                    ],
+                                    keyboardType: TextInputType.numberWithOptions(
+                                        decimal: true),
+                                    controller: discountPercentageController,
+                                    obscureText: false,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                    onChanged: (_) {
+                                      if (discountPercentageController.text ==
+                                          "") {
+                                        setState(() {
+                                          DiscountController.text = "0";
+                                          valueafterController.text =
+                                              valueController.text;
+                                        });
+                                      } else {
+                                        setState(() {
+                                          var discountPercent = double.parse(
+                                              discountPercentageController
+                                                  .text);
+                                          var total = double.parse(
+                                              valueController.text);
+                                          var discountAmount =
+                                              (discountPercent / 100) * total;
+                                          DiscountController.text =
+                                              discountAmount.toString();
+                                          var totalAfterDiscount =
+                                              total - discountAmount;
+                                          valueafterController.text =
+                                              totalAfterDiscount.toString();
+                                        });
+                                      }
+                                    },
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "نسبة الخصم",
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsets.only(top: 20, right: 15, left: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "المجموع بعد الخصم",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xff34568B).withOpacity(0.08),
+                              Color(0xff34568B).withOpacity(0.03),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        controller: valueafterController,
-                        obscureText: false,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "المجموع بعد الخصم",
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "المجموع بعد الخصم",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.calculate,
+                                    color: Color(0xff34568B), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: valueafterController,
+                                    obscureText: false,
+                                    readOnly: true,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Color(0xff34568B),
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "المجموع بعد الخصم",
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
                   Visibility(
                     visible: deliveryDate,
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 20, right: 15, left: 15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xff34568B).withOpacity(0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 "تاريخ التسليم",
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      color: Color(0xff34568B), size: 22),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: deliveryDateController,
+                                      readOnly: true,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                      decoration: InputDecoration(
+                                        border: InputBorder.none,
+                                        hintText: "تاريخ التسليم",
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ),
+                                      onTap: () async {
+                                        DateTime? selectedDate =
+                                            await showDatePicker(
+                                          context: context,
+                                          initialDate: DateTime.now(),
+                                          firstDate: DateTime(2000),
+                                          lastDate: DateTime(2100),
+                                          locale: Locale('ar', ''),
+                                        );
+                                        if (selectedDate != null) {
+                                          deliveryDateController.text =
+                                              "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              right: 15, left: 15, top: 5),
-                          child: Container(
-                            height: 50,
-                            width: double.infinity,
-                            child: TextField(
-                              controller: deliveryDateController,
-                              readOnly: true,
-                              decoration: InputDecoration(
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: Color(0xff34568B), width: 2.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      width: 2.0, color: Color(0xffD6D3D3)),
-                                ),
-                                hintText: "تاريخ التسليم",
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "الملاحظات",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade600,
                               ),
-                              onTap: () async {
-                                DateTime? selectedDate = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now(),
-                                  firstDate: DateTime(2000),
-                                  lastDate: DateTime(2100),
-                                  locale: Locale('ar', ''),
-                                );
-                                if (selectedDate != null) {
-                                  deliveryDateController.text =
-                                      "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
-                                }
-                              },
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding:
-                        const EdgeInsets.only(top: 20, right: 15, left: 15),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          "الملاحظات",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 100,
-                      width: double.infinity,
-                      child: TextField(
-                        controller: NotesController,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "ملاحظات",
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.notes,
+                                    color: Color(0xff34568B), size: 22),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextField(
+                                    controller: NotesController,
+                                    obscureText: false,
+                                    maxLines: 4,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "ملاحظات",
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -428,36 +601,47 @@ class _AddOrderState extends State<AddOrder> {
                   Visibility(
                     visible: type.toString() == "vansale",
                     child: Padding(
-                      padding:
-                          const EdgeInsets.only(top: 5, right: 15, left: 15),
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
+                      padding: const EdgeInsets.only(top: 8, right: 15, left: 15, bottom: 8),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                spreadRadius: 7,
-                                blurRadius: 5,
+                                color: Color(0xff34568B).withOpacity(0.06),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
-                            borderRadius: BorderRadius.circular(4),
-                            color: Colors.white),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    right: 15, left: 15, top: 10),
-                                child: Row(
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Column(
+                              children: [
+                                Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      "نقدا",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.attach_money,
+                                            color: Color(0xff34568B), size: 22),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "نقدا",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     FlutterSwitch(
                                       activeColor: Colors.green,
@@ -472,8 +656,7 @@ class _AddOrderState extends State<AddOrder> {
                                         if (CASH == "no") {
                                           setState(() {
                                             orders = true;
-                                            isZemSelected =
-                                                false; // Set the other switch to false
+                                            isZemSelected = false;
                                           });
                                         } else {
                                           setState(() {
@@ -485,28 +668,32 @@ class _AddOrderState extends State<AddOrder> {
                                     ),
                                   ],
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 1,
-                                  color:
-                                      const Color.fromARGB(255, 218, 218, 218),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 1,
+                                    color: Colors.grey.shade200,
+                                  ),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    right: 15, left: 15, top: 10),
-                                child: Row(
+                                Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      "ذمم",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.card_giftcard,
+                                            color: Color(0xff34568B), size: 22),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "ذمم",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     FlutterSwitch(
                                       activeColor: Colors.green,
@@ -520,8 +707,7 @@ class _AddOrderState extends State<AddOrder> {
                                       onToggle: (val) {
                                         if (CASH == "no") {
                                           setState(() {
-                                            orders =
-                                                false; // Set the other switch to false
+                                            orders = false;
                                             isZemSelected = true;
                                           });
                                         } else {
@@ -534,8 +720,8 @@ class _AddOrderState extends State<AddOrder> {
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -543,21 +729,41 @@ class _AddOrderState extends State<AddOrder> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(
-                        right: 25, left: 25, top: 35, bottom: 20),
-                    child: MaterialButton(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        right: 15, left: 15, top: 20, bottom: 20),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xff34568B),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        elevation: 4,
+                        shadowColor: Color(0xff34568B).withOpacity(0.4),
                       ),
-                      height: 50,
-                      minWidth: double.infinity,
-                      color: Color(0xff34568B),
-                      textColor: Colors.white,
-                      child: Text(
-                        type.toString() == "quds"
-                            ? "حفظ الطلبية"
-                            : "حفظ الفاتورة",
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.save,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            type.toString() == "quds"
+                                ? "حفظ الطلبية"
+                                : "حفظ الفاتورة",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                       onPressed: isSaveButtonDisabled
                           ? () {

@@ -601,74 +601,147 @@ class DataDownloader {
     }
   }
 
-  Future<void> downloadAndSaveOrderItems(int companyId, int salesmanId) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? type = prefs.getString('type');
-      final dbHelper = CartDatabaseHelper();
-      final response = await _functionsAPI.getRequest(
-          "${type.toString() == "quds" ? AppLink.allOrdersDetailsQuds : AppLink.allOrdersDetailsVansale}/$companyId/$salesmanId");
-      if (response == null ||
-          !response.containsKey("orders_details") ||
-          response["orders_details"].isEmpty) {
-        Fluttertoast.showToast(msg: "فشل في تحميل تفاصيل الطلبات");
+Future<void> downloadAndSaveOrderItems(int companyId, int salesmanId) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final String type = (prefs.getString('type') ?? '').toString();
+    final dbHelper = CartDatabaseHelper();
+
+    final String baseUrl =
+        "${type == "quds" ? AppLink.allOrdersDetailsQuds : AppLink.allOrdersDetailsVansale}/$companyId/$salesmanId";
+
+    int page = 1;
+    int lastPage = 1;
+    int totalSaved = 0;
+
+    while (page <= lastPage) {
+      final String url = "$baseUrl?page=$page";
+      final response = await _functionsAPI.getRequest(url);
+
+      if (response == null) {
+        print("❌ error_at=response_null page=$page url=$url");
+        Fluttertoast.showToast(msg: "❌ فشل تحميل تفاصيل الطلبات (صفحة $page)");
         return;
       }
 
-      List<dynamic> items = response["orders_details"];
-      for (var item in items) {
-        try {
-          String fatoraNoQuds = item['fatora_number'].toString();
-          String fatoraNoVansale = item['fatora_id'].toString();
+      if (!response.containsKey("orders_details")) {
+        print("❌ error_at=missing_orders_details page=$page keys=${response.keys.toList()}");
+        Fluttertoast.showToast(msg: "❌ صيغة غير صحيحة من السيرفر (صفحة $page)");
+        return;
+      }
 
-          if (type.toString() == "quds") {
-            final orderItemQuds = OrderItemModel(
-              orderId: int.parse(fatoraNoQuds),
-              isUploaded: "1",
-              productId: item['product_id'].toString(),
-              productName: item['product_name'].toString(),
-              bonus1: item['bonus1'].toString(),
-              bonus2: item['bonus2'].toString(),
-              quantity: double.tryParse(item['p_quantity'].toString()) ?? 0.0,
-              price: double.tryParse(item['p_price'].toString()) ?? 0.0,
-              discount: double.tryParse(item['discount'].toString()) ?? 0.0,
-              total: double.tryParse(item['total'].toString()) ?? 0.0,
-              color: item['notes']?.toString() ?? '',
-              barcode: item['product_barcode']?.toString() ?? '',
-            );
+      final raw = response["orders_details"];
 
-            await dbHelper
-                .insertOrderItems(int.parse(fatoraNoQuds), [orderItemQuds]);
-          } else {
-            final orderItem = OrderItemVansaleModel(
-              orderId: int.parse(fatoraNoVansale),
-              isUploaded: "1",
-              productId: item['product_id'].toString(),
-              productName: item['product_name'].toString(),
-              bonus1: item['bonus1'].toString(),
-              bonus2: item['bonus2'].toString(),
-              quantity: double.tryParse(item['p_quantity'].toString()) ?? 0.0,
-              price: double.tryParse(item['p_price'].toString()) ?? 0.0,
-              discount: double.tryParse(item['discount'].toString()) ?? 0.0,
-              total: double.tryParse(item['total'].toString()) ?? 0.0,
-              color: item['notes']?.toString() ?? '',
-              barcode: item['product_barcode']?.toString() ?? '',
-            );
+      List<dynamic> items = [];
 
-            await dbHelper.insertOrderItemsVansale(
-                int.parse(fatoraNoVansale), [orderItem]);
-          }
-        } catch (e, stacktrace) {
-          print("❌ Error processing item: $e");
-          print(stacktrace);
+      // ✅ Case A: Non-paginated list
+      if (raw is List) {
+        items = raw;
+        lastPage = 1; // no pagination, stop after this
+      }
+      // ✅ Case B: Paginated object { data: [...], last_page: n, ... }
+      else if (raw is Map<String, dynamic>) {
+        final data = raw["data"];
+        if (data is List) {
+          items = data;
+        } else {
+          print("❌ error_at=orders_details_map_no_data page=$page rawKeys=${raw.keys.toList()}");
+          Fluttertoast.showToast(msg: "❌ صيغة orders_details غير متوقعة (صفحة $page)");
+          return;
+        }
+
+        // update lastPage if available
+        final lp = raw["last_page"];
+        if (lp != null) {
+          lastPage = int.tryParse(lp.toString()) ?? lastPage;
+        } else {
+          // fallback: if server doesn't send last_page, stop when data is empty
+          lastPage = 999999;
+        }
+      } else {
+        print("❌ error_at=orders_details_wrong_type page=$page type=${raw.runtimeType}");
+        Fluttertoast.showToast(msg: "❌ orders_details ليست List ولا Map (صفحة $page)");
+        return;
+      }
+
+      if (items.isEmpty) {
+        // If pagination but empty page: stop safely
+        print("⚠️ empty items page=$page, stop.");
+        break;
+      }
+
+      // ✅ Save items of this page
+      for (final item in items) {
+        if (item is! Map) continue;
+        final m = Map<String, dynamic>.from(item);
+
+        // IDs (support both key names)
+        final String orderIdQuds =
+            (m['fatora_number'] ?? m['fatora_id'] ?? '').toString();
+        final String orderIdVansale =
+            (m['fatora_id'] ?? m['fatora_number'] ?? '').toString();
+
+        if (type == "quds") {
+          if (orderIdQuds.isEmpty) continue;
+
+          final orderItemQuds = OrderItemModel(
+            orderId: int.tryParse(orderIdQuds) ?? 0,
+            isUploaded: "1",
+            productId: (m['product_id'] ?? '').toString(),
+            productName: (m['product_name'] ?? '').toString(),
+            bonus1: (m['bonus1'] ?? '').toString(),
+            bonus2: (m['bonus2'] ?? '').toString(),
+            quantity: double.tryParse((m['p_quantity'] ?? 0).toString()) ?? 0.0,
+            price: double.tryParse((m['p_price'] ?? 0).toString()) ?? 0.0,
+            discount: double.tryParse((m['discount'] ?? 0).toString()) ?? 0.0,
+            total: double.tryParse((m['total'] ?? 0).toString()) ?? 0.0,
+            color: (m['notes'] ?? '').toString(),
+            barcode: (m['product_barcode'] ?? '').toString(),
+          );
+
+          await dbHelper.insertOrderItems(
+            int.tryParse(orderIdQuds) ?? 0,
+            [orderItemQuds],
+          );
+          totalSaved++;
+        } else {
+          if (orderIdVansale.isEmpty) continue;
+
+          final orderItem = OrderItemVansaleModel(
+            orderId: int.tryParse(orderIdVansale) ?? 0,
+            isUploaded: "1",
+            productId: (m['product_id'] ?? '').toString(),
+            productName: (m['product_name'] ?? '').toString(),
+            bonus1: (m['bonus1'] ?? '').toString(),
+            bonus2: (m['bonus2'] ?? '').toString(),
+            quantity: double.tryParse((m['p_quantity'] ?? 0).toString()) ?? 0.0,
+            price: double.tryParse((m['p_price'] ?? 0).toString()) ?? 0.0,
+            discount: double.tryParse((m['discount'] ?? 0).toString()) ?? 0.0,
+            total: double.tryParse((m['total'] ?? 0).toString()) ?? 0.0,
+            color: (m['notes'] ?? '').toString(),
+            barcode: (m['product_barcode'] ?? '').toString(),
+          );
+
+          await dbHelper.insertOrderItemsVansale(
+            int.tryParse(orderIdVansale) ?? 0,
+            [orderItem],
+          );
+          totalSaved++;
         }
       }
 
-      Fluttertoast.showToast(msg: "تم تنزيل تفاصيل الفواتير بنجاح");
-    } catch (e, stacktrace) {
-      print("❌ General error in downloadAndSaveOrderItems: $e");
-      print(stacktrace);
-      Fluttertoast.showToast(msg: "حدث خطأ أثناء تحميل تفاصيل الفواتير");
+      print("✅ Saved page $page / $lastPage items=${items.length} totalSaved=$totalSaved");
+
+      // if last_page missing and we used huge number, stop when data empty (handled above)
+      page++;
+      if (lastPage == 999999 && page > 5000) break; // safety
     }
+
+    Fluttertoast.showToast(msg: "✅ تم تنزيل كل تفاصيل الفواتير ($totalSaved سطر)");
+  } catch (e, st) {
+    print("❌ error_at=downloadAndSaveOrderItems_all_pages e=$e");
+    print(st);
+    Fluttertoast.showToast(msg: "حدث خطأ أثناء تحميل تفاصيل الفواتير");
   }
+}
 }

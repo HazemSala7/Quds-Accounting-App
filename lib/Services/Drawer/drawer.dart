@@ -77,20 +77,30 @@ class _DrawerMainState extends State<DrawerMain> {
 
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: Color(0xFFFBFBFB),
       child: ListView(
         children: [
-          Stack(
-            alignment: Alignment.topLeft,
-            children: [
-              DrawerHeader(
-                padding: EdgeInsets.all(0),
-                child: Image.asset(
-                  'assets/images/logo.jpg',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0xFF5359DB).withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
+              ],
+            ),
+            child: DrawerHeader(
+              padding: EdgeInsets.all(0),
+              decoration: BoxDecoration(
+                color: Colors.white,
               ),
-            ],
+              child: Image.asset(
+                'assets/images/logo.jpg',
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            ),
           ),
           Visibility(
             visible: type.toString() == "quds" ? false : true,
@@ -109,14 +119,7 @@ class _DrawerMainState extends State<DrawerMain> {
                           },
                           name: "البضاعة المتبقية",
                           myicon: Icon(Icons.production_quantity_limits)),
-                      Padding(
-                        padding:
-                            const EdgeInsets.only(right: 35, left: 35, top: 10),
-                        child: Container(
-                            width: double.infinity,
-                            height: 2,
-                            color: Color(0xffC6C5C5)),
-                      ),
+                      _buildDivider(),
                     ],
                   ),
                 ),
@@ -134,14 +137,7 @@ class _DrawerMainState extends State<DrawerMain> {
                 ),
                 Visibility(
                   visible: globals.JUST && showTotalSales == "true",
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.only(right: 35, left: 35, top: 10),
-                    child: Container(
-                        width: double.infinity,
-                        height: 2,
-                        color: Color(0xffC6C5C5)),
-                  ),
+                  child: _buildDivider(),
                 ),
               ],
             ),
@@ -160,11 +156,7 @@ class _DrawerMainState extends State<DrawerMain> {
           ),
           Visibility(
             visible: roleID.toString() == "4" ? false : true,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-              child: Container(
-                  width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-            ),
+            child: _buildDivider(),
           ),
           Visibility(
             visible: roleID.toString() == "4" ? false : showMoneyMovments,
@@ -179,13 +171,7 @@ class _DrawerMainState extends State<DrawerMain> {
                     },
                     name: "مجمل الحركات",
                     myicon: Icon(Icons.move_up)),
-                Padding(
-                  padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-                  child: Container(
-                      width: double.infinity,
-                      height: 2,
-                      color: Color(0xffC6C5C5)),
-                ),
+                _buildDivider(),
               ],
             ),
           ),
@@ -205,11 +191,7 @@ class _DrawerMainState extends State<DrawerMain> {
             visible: roleID.toString() == "3" || roleID.toString() == "4"
                 ? false
                 : true,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-              child: Container(
-                  width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-            ),
+            child: _buildDivider(),
           ),
           Visibility(
             visible: roleID.toString() == "3" || roleID.toString() == "4"
@@ -227,11 +209,7 @@ class _DrawerMainState extends State<DrawerMain> {
             visible: roleID.toString() == "3" || roleID.toString() == "4"
                 ? false
                 : true,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-              child: Container(
-                  width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-            ),
+            child: _buildDivider(),
           ),
           Visibility(
             visible: roleID.toString() == "3" ? false : true,
@@ -245,11 +223,7 @@ class _DrawerMainState extends State<DrawerMain> {
           ),
           Visibility(
             visible: roleID.toString() == "3" ? false : true,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-              child: Container(
-                  width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-            ),
+            child: _buildDivider(),
           ),
           Visibility(
             visible:
@@ -267,13 +241,7 @@ class _DrawerMainState extends State<DrawerMain> {
                         ? "الطلبيات المأرشفة"
                         : "الفواتير المأرشفة",
                     myicon: Icon(Icons.request_quote_sharp)),
-                Padding(
-                  padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-                  child: Container(
-                      width: double.infinity,
-                      height: 2,
-                      color: Color(0xffC6C5C5)),
-                ),
+                _buildDivider(),
               ],
             ),
           ),
@@ -304,11 +272,7 @@ class _DrawerMainState extends State<DrawerMain> {
             name: "تعريفات أولية",
             myicon: Icon(Icons.perm_device_information),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-            child: Container(
-                width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-          ),
+          _buildDivider(),
           DrawerCard(
               navi: () async {
                 final _url =
@@ -322,11 +286,7 @@ class _DrawerMainState extends State<DrawerMain> {
               },
               name: "تواصل معنا",
               myicon: Icon(Icons.contact_phone)),
-          Padding(
-            padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-            child: Container(
-                width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-          ),
+          _buildDivider(),
           DrawerCard(
               navi: () {
                 Navigator.push(
@@ -336,11 +296,7 @@ class _DrawerMainState extends State<DrawerMain> {
               },
               name: "تغيير كلمة المرور",
               myicon: Icon(Icons.perm_device_information)),
-          Padding(
-            padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-            child: Container(
-                width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-          ),
+          _buildDivider(),
           Visibility(
             visible: moreComanies,
             child: Column(
@@ -364,138 +320,143 @@ class _DrawerMainState extends State<DrawerMain> {
 
                     showModalBottomSheet(
                       context: context,
+                      backgroundColor: Color(0xFFFBFBFB),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                      ),
                       builder: (BuildContext context) {
                         return Container(
-                          height: 200,
+                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 15),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "الرجاء اختر رقم الشركة",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    )
-                                  ],
+                              Text(
+                                "اختر الشركة",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: Color(0xFF333333),
                                 ),
                               ),
-                              SizedBox(height: 20),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(right: 35, left: 35),
-                                child: ListView.builder(
-                                  itemCount: _companies!.length,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    // Dynamically get the store name based on index
-                                    String storeName = index == 0
-                                        ? storeName1
-                                        : index == 1
-                                            ? storeName2
-                                            : index == 2
-                                                ? storeName3
-                                                : "";
+                              SizedBox(height: 10),
+                              ListView.builder(
+                                itemCount: _companies!.length,
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemBuilder: (BuildContext context, int index) {
+                                  String storeName = index == 0
+                                      ? storeName1
+                                      : index == 1
+                                          ? storeName2
+                                          : index == 2
+                                              ? storeName3
+                                              : "";
 
-                                    return Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: InkWell(
-                                        onTap: () async {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                content: SizedBox(
-                                                  height: 100,
-                                                  width: 100,
-                                                  child: Center(
-                                                    child:
-                                                        CircularProgressIndicator(),
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              backgroundColor: Color(0xFFFBFBFB),
+                                              content: SizedBox(
+                                                height: 60,
+                                                width: 60,
+                                                child: Center(
+                                                  child: CircularProgressIndicator(
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<Color>(
+                                                      Color(0xFF5359DB),
+                                                    ),
                                                   ),
                                                 ),
-                                              );
-                                            },
-                                          );
-
-                                          SharedPreferences prefs =
-                                              await SharedPreferences
-                                                  .getInstance();
-                                          await Future.delayed(
-                                              Duration(milliseconds: 300));
-                                          await prefs.setInt('company_id',
-                                              int.parse(_companies[index]));
-                                          await prefs.setStringList(
-                                              'companiesList', _companies);
-                                          await prefs.setInt(
-                                            'salesman_id',
-                                            int.parse(index == 0
-                                                ? salesman_id1.toString()
-                                                : index == 1
-                                                    ? salesman_id2.toString()
-                                                    : salesman_id3.toString()),
-                                          );
-
-                                          var headers = {
-                                            'ContentType': 'application/json'
-                                          };
-                                          var url =
-                                              'https://yaghm.com/admin/api/customers/${_companies[index]}/${index == 0 ? salesman_id1 : index == 1 ? salesman_id2 : salesman_id3}';
-                                          var response = await http.get(
-                                              Uri.parse(url),
-                                              headers: headers);
-                                          var res = jsonDecode(
-                                              response.body)['customers'];
-
-                                          Navigator.pushAndRemoveUntil(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  Customers(
-                                                CustomersArray: res,
-                                                companiesArray: _companies,
                                               ),
+                                            );
+                                          },
+                                        );
+
+                                        SharedPreferences prefs =
+                                            await SharedPreferences.getInstance();
+                                        await Future.delayed(
+                                            Duration(milliseconds: 300));
+                                        await prefs.setInt('company_id',
+                                            int.parse(_companies[index]));
+                                        await prefs.setStringList(
+                                            'companiesList', _companies);
+                                        await prefs.setInt(
+                                          'salesman_id',
+                                          int.parse(index == 0
+                                              ? salesman_id1.toString()
+                                              : index == 1
+                                                  ? salesman_id2.toString()
+                                                  : salesman_id3.toString()),
+                                        );
+
+                                        var headers = {
+                                          'ContentType': 'application/json'
+                                        };
+                                        var url =
+                                            'https://yaghm.com/admin/api/customers/${_companies[index]}/${index == 0 ? salesman_id1 : index == 1 ? salesman_id2 : salesman_id3}';
+                                        var response = await http.get(
+                                            Uri.parse(url),
+                                            headers: headers);
+                                        var res = jsonDecode(response.body)['customers'];
+
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (BuildContext context) =>
+                                                Customers(
+                                              CustomersArray: res,
+                                              companiesArray: _companies,
                                             ),
-                                            (route) => false,
-                                          );
-                                          Fluttertoast.showToast(
-                                              msg: 'تم تسجيل الدخول بنجاح');
-                                        },
-                                        child: Container(
-                                          width: 150,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Color.fromRGBO(83, 89, 219, 1),
-                                                Color.fromRGBO(
-                                                    32, 39, 160, 0.6),
-                                              ],
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
                                           ),
-                                          child: Center(
-                                            child: Text(
-                                              '${_companies[index]} - $storeName',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                                fontSize: 18,
-                                              ),
+                                          (route) => false,
+                                        );
+                                        Fluttertoast.showToast(
+                                            msg: 'تم تسجيل الدخول بنجاح');
+                                      },
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: 42,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Color(0xFF5359DB),
+                                              Color(0xFF202A1B),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0xFF5359DB).withOpacity(0.15),
+                                              blurRadius: 4,
+                                              offset: Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${_companies[index]} - $storeName',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                              fontSize: 15,
                                             ),
                                           ),
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
+                              SizedBox(height: 8),
                             ],
                           ),
                         );
@@ -505,14 +466,7 @@ class _DrawerMainState extends State<DrawerMain> {
                   name: "اختيار الشركة",
                   myicon: Icon(Icons.store),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 35, left: 35, top: 10),
-                  child: Container(
-                    width: double.infinity,
-                    height: 2,
-                    color: Color(0xffC6C5C5),
-                  ),
-                ),
+                _buildDivider(),
               ],
             ),
           ),
@@ -526,13 +480,18 @@ class _DrawerMainState extends State<DrawerMain> {
               },
               name: "تسجيل خروج",
               myicon: Icon(Icons.logout)),
-          Padding(
-            padding:
-                const EdgeInsets.only(right: 35, left: 35, top: 10, bottom: 50),
-            child: Container(
-                width: double.infinity, height: 2, color: Color(0xffC6C5C5)),
-          ),
+          SizedBox(height: 15),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      child: Divider(
+        height: 0.5,
+        color: Color(0xFFDDDDDD),
       ),
     );
   }

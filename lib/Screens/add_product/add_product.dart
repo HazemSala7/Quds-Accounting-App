@@ -23,12 +23,14 @@ class AddProduct extends StatefulWidget {
       productUnit;
   var price, packingNumber, packingPrice, productColors;
   bool checkProductBarcode, checkProductBarcode20or13, isOnline;
+  final int initialQty;
   AddProduct({
     Key? key,
     this.id,
     this.qtyExist,
     this.name,
     this.productUnit,
+    this.initialQty=0,
     required this.isOnline,
     required this.productBarcode,
     required this.image,
@@ -149,6 +151,7 @@ class _AddProductState extends State<AddProduct> {
               preferredSize: Size.fromHeight(50)),
           body: SingleChildScrollView(
             child: Container(
+              color: Color(0xf5f7fa),
               child: Column(
                 children: [
                   // Padding(
@@ -196,30 +199,59 @@ class _AddProductState extends State<AddProduct> {
                         Text(
                           "أسم المنتج",
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 14, 
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff2c3e50)),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        readOnly: true,
-                        controller: nameController,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: TextField(
+                          readOnly: true,
+                          controller: nameController,
+                          obscureText: false,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.inventory_2, 
+                              color: Color(0xff34568B),
+                              size: 22,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Color(0xff34568B), width: 2.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: "أسم الصنف",
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "أسم الصنف",
                         ),
                       ),
                     ),
@@ -228,96 +260,151 @@ class _AddProductState extends State<AddProduct> {
                     padding:
                         const EdgeInsets.only(top: 20, right: 15, left: 15),
                     child: Row(
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           flex: 1,
                           child: Text(
                             "الكمية",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 14, 
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2c3e50)),
                           ),
                         ),
-                        SizedBox(
-                          width: 15,
-                        ),
+                        SizedBox(width: 15),
                         Expanded(
                           flex: 1,
                           child: Text(
                             "الكمية الموجودة",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 14, 
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2c3e50)),
                           ),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
                     child: Row(
                       children: [
                         Expanded(
                           flex: 1,
-                          child: Container(
-                            height: 50,
-                            child: TextField(
-                              keyboardType: TextInputType.numberWithOptions(
-                                  signed: true, decimal: true),
-                              controller: qty,
-                              onChanged: (hazem) {
-                                setState(() {
-                                  var init_total = double.parse(qty.text) *
-                                      double.parse(priceController.text) *
-                                      (1 -
-                                          (double.parse(
-                                                  discountContrller.text) /
-                                              100));
-                                  totalController.text =
-                                      init_total.toStringAsFixed(2);
-                                });
-                              },
-                              obscureText: false,
-                              decoration: InputDecoration(
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: Color(0xff34568B), width: 2.0),
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xff34568B).withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: TextField(
+                                keyboardType: TextInputType.numberWithOptions(
+                                    signed: true, decimal: true),
+                                controller: qty,
+                                onChanged: (hazem) {
+                                  setState(() {
+                                    var init_total = double.parse(qty.text) *
+                                        double.parse(priceController.text) *
+                                        (1 -
+                                            (double.parse(
+                                                    discountContrller.text) /
+                                                100));
+                                    totalController.text =
+                                        init_total.toStringAsFixed(2);
+                                  });
+                                },
+                                obscureText: false,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.shopping_cart, 
+                                    color: Color(0xff34568B),
+                                    size: 22,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                        color: Color(0xff34568B), width: 2.0),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  hintText: "الكمية",
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      width: 2.0, color: Color(0xffD6D3D3)),
-                                ),
-                                hintText: "الكمية",
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 15,
-                        ),
+                        SizedBox(width: 15),
                         Expanded(
                           flex: 1,
-                          child: Container(
-                            height: 50,
-                            child: TextField(
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'^\d*\.?\d{0,2}')),
-                              ],
-                              keyboardType: TextInputType.numberWithOptions(
-                                  decimal: true),
-                              readOnly: true,
-                              controller: qtyController,
-                              obscureText: false,
-                              decoration: InputDecoration(
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: Color(0xff34568B), width: 2.0),
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0xff34568B).withOpacity(0.1),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  )
+                                ],
+                              ),
+                              child: TextField(
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d*\.?\d{0,2}')),
+                                ],
+                                keyboardType: TextInputType.numberWithOptions(
+                                    decimal: true),
+                                readOnly: true,
+                                controller: qtyController,
+                                obscureText: false,
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(Icons.inventory, 
+                                    color: Color(0xff34568B),
+                                    size: 22,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                        color: Color(0xff34568B), width: 2.0),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                  hintText: "الكمية الموجوده",
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                 ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                      width: 2.0, color: Color(0xffD6D3D3)),
-                                ),
-                                hintText: "الكمية الموجوده",
                               ),
                             ),
                           ),
@@ -331,7 +418,6 @@ class _AddProductState extends State<AddProduct> {
                       padding:
                           const EdgeInsets.only(top: 20, right: 15, left: 15),
                       child: Row(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Visibility(
                             visible: ponus1,
@@ -340,13 +426,13 @@ class _AddProductState extends State<AddProduct> {
                               child: Text(
                                 "بونص 1",
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                    fontSize: 14, 
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xff2c3e50)),
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: 15,
-                          ),
+                          SizedBox(width: 15),
                           Visibility(
                             visible: ponus2,
                             child: Expanded(
@@ -354,7 +440,9 @@ class _AddProductState extends State<AddProduct> {
                               child: Text(
                                 "بونص 2",
                                 style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                    fontSize: 14, 
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xff2c3e50)),
                               ),
                             ),
                           ),
@@ -363,35 +451,62 @@ class _AddProductState extends State<AddProduct> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
                     child: Row(
                       children: [
                         Visibility(
                           visible: ponus1,
                           child: Expanded(
                             flex: 1,
-                            child: Container(
-                              height: 50,
-                              width: double.infinity,
-                              child: TextField(
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*\.?\d{0,2}')),
-                                ],
-                                keyboardType: TextInputType.numberWithOptions(
-                                    decimal: true),
-                                controller: bonus1Controller,
-                                obscureText: false,
-                                decoration: InputDecoration(
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Color(0xff34568B), width: 2.0),
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xff34568B).withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    )
+                                  ],
+                                ),
+                                child: TextField(
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d*\.?\d{0,2}')),
+                                  ],
+                                  keyboardType: TextInputType.numberWithOptions(
+                                      decimal: true),
+                                  controller: bonus1Controller,
+                                  obscureText: false,
+                                  decoration: InputDecoration(
+                                    prefixIcon: Icon(Icons.card_giftcard, 
+                                      color: Color(0xff34568B),
+                                      size: 22,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Color(0xff34568B), width: 2.0),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintText: "بونص 1",
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        width: 2.0, color: Color(0xffD6D3D3)),
-                                  ),
-                                  hintText: "بونص 1",
                                 ),
                               ),
                             ),
@@ -399,36 +514,61 @@ class _AddProductState extends State<AddProduct> {
                         ),
                         Visibility(
                           visible: ponus2,
-                          child: SizedBox(
-                            width: 15,
-                          ),
+                          child: SizedBox(width: 15),
                         ),
                         Visibility(
                           visible: ponus2,
                           child: Expanded(
                             flex: 1,
-                            child: Container(
-                              height: 50,
-                              width: double.infinity,
-                              child: TextField(
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d*\.?\d{0,2}')),
-                                ],
-                                keyboardType: TextInputType.numberWithOptions(
-                                    decimal: true),
-                                controller: bonus2Controller,
-                                obscureText: false,
-                                decoration: InputDecoration(
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Color(0xff34568B), width: 2.0),
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(0xff34568B).withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    )
+                                  ],
+                                ),
+                                child: TextField(
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d*\.?\d{0,2}')),
+                                  ],
+                                  keyboardType: TextInputType.numberWithOptions(
+                                      decimal: true),
+                                  controller: bonus2Controller,
+                                  obscureText: false,
+                                  decoration: InputDecoration(
+                                    prefixIcon: Icon(Icons.card_giftcard, 
+                                      color: Color(0xff34568B),
+                                      size: 22,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                          color: Color(0xff34568B), width: 2.0),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintText: "بونص 2",
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                                    hintStyle: TextStyle(color: Colors.grey.shade400),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        width: 2.0, color: Color(0xffD6D3D3)),
-                                  ),
-                                  hintText: "بونص 2",
                                 ),
                               ),
                             ),
@@ -446,30 +586,59 @@ class _AddProductState extends State<AddProduct> {
                         Text(
                           "وصف المنتج",
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 14, 
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff2c3e50)),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        controller: descController,
-                        readOnly: true,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: TextField(
+                          controller: descController,
+                          readOnly: true,
+                          obscureText: false,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.description, 
+                              color: Color(0xff34568B),
+                              size: 22,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Color(0xff34568B), width: 2.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            hintText: "وصف المنتج",
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "وصف المنتج",
                         ),
                       ),
                     ),
@@ -483,30 +652,59 @@ class _AddProductState extends State<AddProduct> {
                         Text(
                           "الوحدة",
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 14, 
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff2c3e50)),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        controller: unitController,
-                        readOnly: true,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: TextField(
+                          controller: unitController,
+                          readOnly: true,
+                          obscureText: false,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.straighten, 
+                              color: Color(0xff34568B),
+                              size: 22,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Color(0xff34568B), width: 2.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            hintText: "الوحدة",
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "الوحدة",
                         ),
                       ),
                     ),
@@ -520,72 +718,80 @@ class _AddProductState extends State<AddProduct> {
                         Text(
                           "سعر المنتج",
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 14, 
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff2c3e50)),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        readOnly: type.toString() == "quds"
-                            ? false
-                            : vansaleCanChangePassword.toString() == "true"
-                                ? false
-                                : true,
-                        onChanged: (_) async {
-                          // if (STORE.toString() == "30" ||
-                          //     STORE.toString() == "31" ||
-                          //     STORE.toString() == "33" ||
-                          //     STORE.toString() == "79" ||
-                          //     STORE.toString() == "83" ||
-                          //     STORE.toString() == "88") {
-                          //   if (double.parse(priceController.text) <
-                          //       double.parse(price20.toString())) {
-                          //     priceController.text = price20.toString();
-                          //   } else if (double.parse(priceController.text) >
-                          //       double.parse(price3.toString())) {
-                          //     priceController.text = price3.toString();
-                          //   }
-                          // } else {
-                          //   if (double.parse(priceController.text) <
-                          //       double.parse(price4.toString())) {
-                          //     priceController.text = price4.toString();
-                          //   }
-                          // }
-
-                          // setState(() {});
-                          setState(() {
-                            var init_total = double.parse(qty.text) *
-                                double.parse(priceController.text) *
-                                (1 -
-                                    (double.parse(discountContrller.text) /
-                                        100));
-                            totalController.text =
-                                init_total.toStringAsFixed(2);
-                          });
-                        },
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d{0,2}')),
-                        ],
-                        keyboardType:
-                            TextInputType.numberWithOptions(decimal: true),
-                        controller: priceController,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: TextField(
+                          readOnly: type.toString() == "quds"
+                              ? false
+                              : vansaleCanChangePassword.toString() == "true"
+                                  ? false
+                                  : true,
+                          onChanged: (_) async {
+                            setState(() {
+                              var init_total = double.parse(qty.text) *
+                                  double.parse(priceController.text) *
+                                  (1 -
+                                      (double.parse(discountContrller.text) /
+                                          100));
+                              totalController.text =
+                                  init_total.toStringAsFixed(2);
+                            });
+                          },
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'^\d*\.?\d{0,2}')),
+                          ],
+                          keyboardType:
+                              TextInputType.numberWithOptions(decimal: true),
+                          controller: priceController,
+                          obscureText: false,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.attach_money, 
+                              color: Color(0xff34568B),
+                              size: 22,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Color(0xff34568B), width: 2.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                            hintText: "السعر",
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
-                          ),
-                          hintText: "السعر",
                         ),
                       ),
                     ),
@@ -601,7 +807,9 @@ class _AddProductState extends State<AddProduct> {
                           Text(
                             "الخصم",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 14, 
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2c3e50)),
                           ),
                         ],
                       ),
@@ -611,40 +819,67 @@ class _AddProductState extends State<AddProduct> {
                     visible: discountSetting,
                     child: Padding(
                       padding:
-                          const EdgeInsets.only(right: 15, left: 15, top: 5),
-                      child: Container(
-                        height: 50,
-                        width: double.infinity,
-                        child: TextField(
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d*\.?\d{0,2}')),
-                          ],
-                          keyboardType:
-                              TextInputType.numberWithOptions(decimal: true),
-                          onChanged: (hazem) {
-                            setState(() {
-                              var init_total = double.parse(qty.text) *
-                                  double.parse(priceController.text) *
-                                  (1 -
-                                      (double.parse(discountContrller.text) /
-                                          100));
-                              totalController.text =
-                                  init_total.toStringAsFixed(2);
-                            });
-                          },
-                          controller: discountContrller,
-                          obscureText: false,
-                          decoration: InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  color: Color(0xff34568B), width: 2.0),
+                          const EdgeInsets.only(right: 15, left: 15, top: 8),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xff34568B).withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: TextField(
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}')),
+                            ],
+                            keyboardType:
+                                TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (hazem) {
+                              setState(() {
+                                var init_total = double.parse(qty.text) *
+                                    double.parse(priceController.text) *
+                                    (1 -
+                                        (double.parse(discountContrller.text) /
+                                            100));
+                                totalController.text =
+                                    init_total.toStringAsFixed(2);
+                              });
+                            },
+                            controller: discountContrller,
+                            obscureText: false,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.local_offer, 
+                                color: Color(0xff34568B),
+                                size: 22,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: Color(0xff34568B), width: 2.0),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              hintText: "الخصم %",
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  width: 2.0, color: Color(0xffD6D3D3)),
-                            ),
-                            hintText: "الخصم",
                           ),
                         ),
                       ),
@@ -659,30 +894,67 @@ class _AddProductState extends State<AddProduct> {
                         Text(
                           "المجموع",
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 14, 
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xff2c3e50)),
                         ),
                       ],
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                    child: Container(
-                      height: 50,
-                      width: double.infinity,
-                      child: TextField(
-                        readOnly: true,
-                        controller: totalController,
-                        obscureText: false,
-                        decoration: InputDecoration(
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Color(0xff34568B), width: 2.0),
+                    padding: const EdgeInsets.only(right: 15, left: 15, top: 8),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xff34568B).withOpacity(0.05),
+                              Color(0xff34568B).withOpacity(0.02),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                width: 2.0, color: Color(0xffD6D3D3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xff34568B).withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: TextField(
+                          readOnly: true,
+                          controller: totalController,
+                          obscureText: false,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff34568B),
                           ),
-                          hintText: "المجموع",
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.calculate, 
+                              color: Color(0xff34568B),
+                              size: 22,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            hintText: "المجموع",
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                          ),
                         ),
                       ),
                     ),
@@ -820,7 +1092,9 @@ class _AddProductState extends State<AddProduct> {
                           Text(
                             "ملاحظات",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 14, 
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xff2c3e50)),
                           ),
                         ],
                       ),
@@ -830,23 +1104,51 @@ class _AddProductState extends State<AddProduct> {
                     visible: notes,
                     child: Padding(
                       padding:
-                          const EdgeInsets.only(right: 15, left: 15, top: 5),
-                      child: Container(
-                        height: 100,
-                        width: double.infinity,
-                        child: TextField(
-                          controller: notesController,
-                          obscureText: false,
-                          decoration: InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  color: Color(0xff34568B), width: 2.0),
+                          const EdgeInsets.only(right: 15, left: 15, top: 8),
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xff34568B).withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: TextField(
+                            controller: notesController,
+                            obscureText: false,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(Icons.notes, 
+                                color: Color(0xff34568B),
+                                size: 22,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                    color: Color(0xff34568B), width: 2.0),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              hintText: "ملاحظات إضافية",
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                              hintStyle: TextStyle(color: Colors.grey.shade400),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                  width: 2.0, color: Color(0xffD6D3D3)),
-                            ),
-                            hintText: "ملاحظات",
                           ),
                         ),
                       ),
@@ -855,199 +1157,224 @@ class _AddProductState extends State<AddProduct> {
                   Padding(
                     padding: const EdgeInsets.only(
                         right: 25, left: 25, top: 35, bottom: 30),
-                    child: MaterialButton(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10))),
-                      height: 50,
-                      minWidth: double.infinity,
-                      color: Color(0xff34568B),
-                      textColor: Colors.white,
-                      child: Text(
-                        "اضافة صنف",
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xff34568B).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                            spreadRadius: 1,
+                          )
+                        ],
                       ),
-                      onPressed: isButtonDisabled
-                          ? null
-                          : () {
-                              if (qty.text == "") {
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xff34568B),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                        ),
+                        onPressed: isButtonDisabled ? null : () {
+                          if (qty.text == "") {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  content: Text(
+                                    'الرجاء ادخال الكمية',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  actions: <Widget>[
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: Container(
+                                        width: 100,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                            color: Main_Color,
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        child: Center(
+                                          child: Text(
+                                            "حسنا",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          } else {
+                            if (widget.productColors == null ||
+                                widget.productColors.isEmpty ||
+                                widget.productColors.length == 0) {
+                              if (double.parse(qty.text) >
+                                  double.parse(qtyController.text == "null"
+                                      ? "0"
+                                      : qtyController.text)) {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return AlertDialog(
                                       content: Text(
-                                        'الرجاء ادخال الكمية',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
+                                          'الكمية المطلوبه اكبر من الكمية الموجوده , هل تريد الاستمرار ؟ '),
                                       actions: <Widget>[
-                                        InkWell(
-                                          onTap: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: Container(
-                                            width: 100,
-                                            height: 40,
-                                            decoration: BoxDecoration(
-                                                color: Main_Color,
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                            child: Center(
-                                              child: Text(
-                                                "حسنا",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          children: [
+                                            InkWell(
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                send();
+                                              },
+                                              child: Container(
+                                                width: 100,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                    color: Main_Color,
+                                                    borderRadius:
+                                                        BorderRadius
+                                                            .circular(10)),
+                                                child: Center(
+                                                  child: Text(
+                                                    "نعم",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color:
+                                                            Colors.white),
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ),
+                                            InkWell(
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Container(
+                                                width: 100,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                    color: Main_Color,
+                                                    borderRadius:
+                                                        BorderRadius
+                                                            .circular(10)),
+                                                child: Center(
+                                                  child: Text(
+                                                    "لا",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color:
+                                                            Colors.white),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     );
                                   },
                                 );
                               } else {
-                                if (widget.productColors == null ||
-                                    widget.productColors.isEmpty ||
-                                    widget.productColors.length == 0) {
-                                  if (double.parse(qty.text) >
-                                      double.parse(qtyController.text == "null"
-                                          ? "0"
-                                          : qtyController.text)) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          content: Text(
-                                              'الكمية المطلوبه اكبر من الكمية الموجوده , هل تريد الاستمرار ؟ '),
-                                          actions: <Widget>[
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceAround,
-                                              children: [
-                                                InkWell(
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                    send();
-                                                  },
-                                                  child: Container(
-                                                    width: 100,
-                                                    height: 40,
-                                                    decoration: BoxDecoration(
-                                                        color: Main_Color,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10)),
-                                                    child: Center(
-                                                      child: Text(
-                                                        "نعم",
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color:
-                                                                Colors.white),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                InkWell(
-                                                  onTap: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Container(
-                                                    width: 100,
-                                                    height: 40,
-                                                    decoration: BoxDecoration(
-                                                        color: Main_Color,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10)),
-                                                    child: Center(
-                                                      child: Text(
-                                                        "لا",
-                                                        style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color:
-                                                                Colors.white),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else {
-                                    send();
-                                  }
-                                  setState(() {
-                                    isButtonDisabled = true;
-                                  });
-                                  _disableButtonForDuration(
-                                      Duration(seconds: 3));
-                                } else {
-                                  for (int i = 0;
-                                      i < widget.productColors.length;
-                                      i++) {
-                                    _Names.add(widget.productColors[i]["color"]
-                                        .toString());
-                                  }
-                                  for (int i = 0;
-                                      i < widget.productColors.length;
-                                      i++) {
-                                    if (int.parse(widget.productColors[i]
-                                                    ['quantity'] ==
-                                                null
-                                            ? "0"
-                                            : widget.productColors[i]
-                                                    ['quantity']
-                                                .toString()) >=
-                                        1) {
-                                      final newItem = CartItem(
-                                        productBarcode: widget
-                                                .checkProductBarcode
-                                            ? widget.productBarcode.toString()
-                                            : "",
-                                        quantityexists:
-                                            double.parse(widget.qty.toString()),
-                                        colorsNames: _Names.map(
-                                            (size) => size.toString()).toList(),
-                                        notes: notesController.text == ""
-                                            ? "-"
-                                            : notesController.text,
-                                        color: widget.productColors[i]["color"]
-                                            .toString(),
-                                        productId: widget.id.toString(),
-                                        name: widget.name,
-                                        image: widget.image,
-                                        price:
-                                            double.parse(priceController.text),
-                                        discount: double.parse(
-                                            discountContrller.text),
-                                        quantity: double.parse(widget
-                                            .productColors[i]['quantity']
-                                            .toString()),
-                                        ponus1: bonus1Controller.text == ""
-                                            ? "0"
-                                            : bonus1Controller.text,
-                                        ponus2: bonus2Controller.text == ""
-                                            ? "0"
-                                            : bonus2Controller.text,
-                                      );
-                                      cartProvider!.addToCart(newItem);
-                                      Fluttertoast.showToast(
-                                          msg:
-                                              "تم اضافة هذا المنتج الى الفاتورة بنجاح");
-                                      Navigator.pop(context,
-                                          true); // Instead of just Navigator.pop(context)
-                                    }
-                                  }
+                                send();
+                              }
+                              setState(() {
+                                isButtonDisabled = true;
+                              });
+                              _disableButtonForDuration(
+                                  Duration(seconds: 3));
+                            } else {
+                              for (int i = 0;
+                                  i < widget.productColors.length;
+                                  i++) {
+                                _Names.add(widget.productColors[i]["color"]
+                                    .toString());
+                              }
+                              for (int i = 0;
+                                  i < widget.productColors.length;
+                                  i++) {
+                                if (int.parse(widget.productColors[i]
+                                                ['quantity'] ==
+                                            null
+                                        ? "0"
+                                        : widget.productColors[i]
+                                                ['quantity']
+                                            .toString()) >=
+                                    1) {
+                                  final newItem = CartItem(
+                                    productBarcode: widget
+                                            .checkProductBarcode
+                                        ? widget.productBarcode.toString()
+                                        : "",
+                                    quantityexists:
+                                        double.parse(widget.qty.toString()),
+                                    colorsNames: _Names.map(
+                                        (size) => size.toString()).toList(),
+                                    notes: notesController.text == ""
+                                        ? "-"
+                                        : notesController.text,
+                                    color: widget.productColors[i]["color"]
+                                        .toString(),
+                                    productId: widget.id.toString(),
+                                    name: widget.name,
+                                    image: widget.image,
+                                    price:
+                                        double.parse(priceController.text),
+                                    discount: double.parse(
+                                        discountContrller.text),
+                                    quantity: double.parse(widget
+                                        .productColors[i]['quantity']
+                                        .toString()),
+                                    ponus1: bonus1Controller.text == ""
+                                        ? "0"
+                                        : bonus1Controller.text,
+                                    ponus2: bonus2Controller.text == ""
+                                        ? "0"
+                                        : bonus2Controller.text,
+                                  );
+                                  cartProvider!.addToCart(newItem);
+                                  Fluttertoast.showToast(
+                                      msg:
+                                          "تم اضافة هذا المنتج الى الفاتورة بنجاح");
+                                  Navigator.pop(context,
+                                      true); // Instead of just Navigator.pop(context)
                                 }
                               }
-                            },
+                            }
+                          }
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_shopping_cart, 
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              "اضافة صنف للفاتورة",
+                              style: TextStyle(
+                                  fontSize: 18, 
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],

@@ -117,22 +117,21 @@ class _OrderCardState extends State<OrderCard> {
 
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 30, right: 15, left: 15),
+      padding: const EdgeInsets.only(top: 15, right: 15, left: 15, bottom: 10),
       child: Stack(
         alignment: Alignment.topRight,
         children: [
           Container(
-            height: 200,
-            width: double.infinity,
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 7,
-                  blurRadius: 5,
+                  color: Colors.black.withOpacity(0.08),
+                  spreadRadius: 2,
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(12),
               color: Colors.white,
             ),
             child: Column(
@@ -140,227 +139,297 @@ class _OrderCardState extends State<OrderCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
+                    // Product Image
                     Expanded(
                       flex: 2,
                       child: Container(
-                        height: 200,
+                        height: 180,
                         child: ClipRRect(
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(4),
-                              topRight: Radius.circular(4)),
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12)),
                           child: ProductCardQuds.buildImage(widget.image),
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12)),
                         ),
                       ),
                     ),
-                    SizedBox(
-                      width: 15,
-                    ),
+                    const SizedBox(width: 12),
+                    // Product Details
                     Expanded(
                       flex: 3,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "الاسم :",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Expanded(
-                                child: Text(
-                                  widget.name.length > 50
-                                      ? widget.name.substring(0, 50) + '...'
-                                      : widget.name,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                "السعر :",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                "₪${widget.price}",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                "الكمية :",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                '${widget.qty}',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          Visibility(
-                            visible: widget.color == null ||
-                                    widget.color.toString() == ""
-                                ? false
-                                : true,
-                            child: Row(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Product Name
+                            Row(
                               children: [
-                                Text(
-                                  "اللون :",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                                SizedBox(
-                                  width: 10,
-                                ),
-                                Container(
-                                  width: 50,
-                                  height: 20,
-                                  margin: EdgeInsets.symmetric(horizontal: 5.0),
-                                  decoration: BoxDecoration(
-                                    color: Color(int.parse(
-                                        '0xFF${widget.color}')), // Convert color code to Color object
-                                    border: Border.all(
-                                      color: Colors.transparent,
-                                      width: 2.0,
-                                    ),
-
-                                    borderRadius: BorderRadius.circular(8),
+                                Icon(Icons.inventory_2, 
+                                  size: 18, 
+                                  color: Color(0xff34568B).withOpacity(0.7)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    widget.name.length > 40
+                                        ? widget.name.substring(0, 40) + '...'
+                                        : widget.name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13,
+                                        color: Color(0xff2c3e50)),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          Visibility(
-                            visible: ponus1,
-                            child: Row(
+                            // Price
+                            Row(
                               children: [
+                                Icon(Icons.attach_money, 
+                                  size: 18, 
+                                  color: Color(0xff34568B).withOpacity(0.7)),
+                                const SizedBox(width: 8),
                                 Text(
-                                  "بونص 1 :",
+                                  "السعر : ",
                                   style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                    fontWeight: FontWeight.w600, 
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600),
                                 ),
-                                SizedBox(
-                                  width: 10,
-                                ),
+                                const SizedBox(width: 4),
                                 Text(
-                                  "${widget.ponus_one}",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                  "₪${widget.price}",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, 
+                                      fontSize: 13,
+                                      color: Color(0xff34568B)),
                                 ),
                               ],
                             ),
-                          ),
-                          Visibility(
-                            visible: ponus2,
-                            child: Row(
+                            // Quantity
+                            Row(
                               children: [
+                                Icon(Icons.shopping_cart, 
+                                  size: 18, 
+                                  color: Color(0xff34568B).withOpacity(0.7)),
+                                const SizedBox(width: 8),
                                 Text(
-                                  "بونص 2 :",
+                                  "الكمية : ",
                                   style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                    fontWeight: FontWeight.w600, 
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600),
                                 ),
-                                SizedBox(
-                                  width: 10,
-                                ),
+                                const SizedBox(width: 4),
                                 Text(
-                                  "${widget.ponus_two}",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
+                                  '${widget.qty}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold, 
+                                      fontSize: 13,
+                                      color: Color(0xff34568B)),
                                 ),
                               ],
                             ),
-                          ),
-                          Visibility(
-                            visible: discountSetting,
-                            child: Row(
-                              children: [
-                                Text(
-                                  "الخصم :",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                                SizedBox(
-                                  width: 10,
-                                ),
-                                Text(
-                                  "${widget.discount}",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                "المجموع :",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
+                            // Color
+                            Visibility(
+                              visible: widget.color == null ||
+                                      widget.color.toString() == ""
+                                  ? false
+                                  : true,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.palette, 
+                                    size: 18, 
+                                    color: Color(0xff34568B).withOpacity(0.7)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "اللون : ",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600, 
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    width: 30,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: Color(
+                                          int.parse('0xFF${widget.color}')),
+                                      border: Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 2.0,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Text(
-                                widget.total.toString().length < 5
-                                    ? "₪${widget.total}"
-                                    : "₪${widget.total.toString().substring(0, 4)}",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                          Visibility(
-                            visible: notes,
-                            child: Row(
-                              children: [
-                                Text(
-                                  "الملاحظات :",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                                SizedBox(
-                                  width: 10,
-                                ),
-                                Text(
-                                  widget.notes,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                              ],
                             ),
-                          ),
-                        ],
+                            // Bonus 1
+                            Visibility(
+                              visible: ponus1,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.card_giftcard, 
+                                    size: 18, 
+                                    color: Color(0xff34568B).withOpacity(0.7)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "بونص 1 : ",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600, 
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "${widget.ponus_one}",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13,
+                                        color: Color(0xff34568B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Bonus 2
+                            Visibility(
+                              visible: ponus2,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.card_giftcard, 
+                                    size: 18, 
+                                    color: Color(0xff34568B).withOpacity(0.7)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "بونص 2 : ",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600, 
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "${widget.ponus_two}",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13,
+                                        color: Color(0xff34568B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Discount
+                            Visibility(
+                              visible: discountSetting,
+                              child: Row(
+                                children: [
+                                  Icon(Icons.local_offer, 
+                                    size: 18, 
+                                    color: Color(0xff34568B).withOpacity(0.7)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "الخصم : ",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600, 
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "${widget.discount}%",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13,
+                                        color: Colors.orange),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Total
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Color(0xff34568B).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Color(0xff34568B).withOpacity(0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.calculate, 
+                                        size: 16, 
+                                        color: Color(0xff34568B).withOpacity(0.7)),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        "المجموع :",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    widget.total.toString().length < 5
+                                        ? "₪${widget.total}"
+                                        : "₪${widget.total.toString().substring(0, 4)}",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold, 
+                                        fontSize: 13,
+                                        color: Color(0xff34568B)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Notes (if visible)
+                            Visibility(
+                              visible: notes,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.amber.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.note, 
+                                      size: 14, 
+                                      color: Colors.amber.shade700),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        widget.notes,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 11,
+                                          color: Colors.amber.shade900),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   ],
@@ -368,53 +437,72 @@ class _OrderCardState extends State<OrderCard> {
               ],
             ),
           ),
+          // Action Menu Button
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(10.0),
             child: Container(
-              height: 30,
-              width: 30,
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: Colors.grey),
-              child: Center(
-                child: PopupMenuButton<int>(
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-                    PopupMenuItem<int>(
-                      value: 1,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.delete,
-                          color: Main_Color,
+              height: 36,
+              width: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xff34568B),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xff34568B).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: PopupMenuButton<int>(
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+                  PopupMenuItem<int>(
+                    value: 1,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          color: Colors.red.shade600,
+                          size: 20,
                         ),
-                        title: Text(
+                        const SizedBox(width: 12),
+                        const Text(
                           'حذف',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 17),
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                      ),
+                      ],
                     ),
-                    PopupMenuItem<int>(
-                      value: 2,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.edit,
-                          color: Main_Color,
+                  ),
+                  PopupMenuItem<int>(
+                    value: 2,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: Color(0xff34568B),
+                          size: 20,
                         ),
-                        title: Text(
+                        const SizedBox(width: 12),
+                        const Text(
                           'تعديل',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 17),
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                  onSelected: (int value) {
-                    _handleMenuSelection(value);
-                  },
-                  child: FaIcon(
-                    FontAwesomeIcons.listUl,
-                    color: Colors.white,
-                    size: 20,
                   ),
+                ],
+                onSelected: (int value) {
+                  _handleMenuSelection(value);
+                },
+                child: Icon(
+                  Icons.more_vert,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),

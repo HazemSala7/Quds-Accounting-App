@@ -98,4 +98,8 @@ class AppLink {
   static const String addHistory = "${server}add_history";
   static const String addMultipleHistories = "${server}histories/multiple";
   static const String totalSales = "${server}total_sales";
+
+  // ================================= Begin Notifications ========================== //
+  static const String notifications = "${server}notifications";
+  // ================================= End Notifications ========================== //
 }

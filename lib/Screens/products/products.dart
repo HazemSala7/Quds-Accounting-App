@@ -41,6 +41,30 @@ class _ProductsState extends State<Products> {
   bool _isListening = false;
   bool _showMicOverlay = false;
 
+  // Helper method to get cross axis count based on device size
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width > 600 ? 3 : 2; // 3 columns on tablet, 2 on phone
+  }
+
+  // Helper method to get cross axis spacing based on device size
+  double _getCrossAxisSpacing(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width > 600 ? 15 : 5; // More space on tablet
+  }
+
+  // Helper method to get aspect ratio based on device size
+  double _getChildAspectRatio(BuildContext context, bool productImageVisible) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 600) {
+      // Tablet with 3 columns - larger aspect ratio for better spacing
+      return productImageVisible ? 0.75 : 1.8;
+    } else {
+      // Phone with 2 columns - original aspect ratio
+      return productImageVisible ? 0.6 : 1.6;
+    }
+  }
+
 // For scrolling to found product
   final GlobalKey _listKey = GlobalKey();
   final Map<int, GlobalKey> _itemKeys = {};
@@ -195,11 +219,11 @@ class _ProductsState extends State<Products> {
                                         cacheExtent: 150,
                                         gridDelegate:
                                             SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisSpacing: 5,
+                                          crossAxisSpacing: _getCrossAxisSpacing(context),
                                           childAspectRatio:
-                                              productImage ? 0.7 : 1.6,
-                                          mainAxisSpacing: 0,
-                                          crossAxisCount: 2,
+                                              _getChildAspectRatio(context, productImage),
+                                          mainAxisSpacing: 10,
+                                          crossAxisCount: _getCrossAxisCount(context),
                                         ),
                                         controller: _controller,
                                         // ignore: unnecessary_null_comparison
@@ -376,11 +400,11 @@ class _ProductsState extends State<Products> {
                                         controller: _controller,
                                         gridDelegate:
                                             SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisSpacing: 5,
+                                          crossAxisSpacing: _getCrossAxisSpacing(context),
                                           childAspectRatio:
-                                              productImage ? 0.7 : 1.4,
+                                              _getChildAspectRatio(context, productImage),
                                           mainAxisSpacing: 0,
-                                          crossAxisCount: 2,
+                                          crossAxisCount: _getCrossAxisCount(context),
                                         ),
                                         itemCount:
                                             _posts != null ? _posts.length : 0,

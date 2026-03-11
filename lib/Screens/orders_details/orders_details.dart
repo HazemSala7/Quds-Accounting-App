@@ -132,310 +132,575 @@ class _OrdersDetailsState extends State<OrdersDetails> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Main_Color,
-      child: SafeArea(
-        child: Scaffold(
-          key: _scaffoldState,
-          drawer: DrawerMain(),
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(50),
-            child: AppBarBack(
-              title: type.toString() == "quds"
-                  ? "تفاصيل الطلبية"
-                  : "تفاصيل الفاتورة",
+@override
+Widget build(BuildContext context) {
+  final bool canPrint = vansaleCanPrint.toString() == "true";
+  final bool isQuds = type.toString() == "quds";
+
+  return Container(
+    color: Main_Color,
+    child: SafeArea(
+      child: Scaffold(
+        key: _scaffoldState,
+        drawer: DrawerMain(),
+        backgroundColor: Main_Color,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: AppBarBack(
+            title: isQuds ? "تفاصيل الطلبية" : "تفاصيل الفاتورة",
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          child: Column(
+            children: [
+              // ===== Actions Card (Print) =====
+              if (canPrint) _buildActionsCard(context),
+
+              if (canPrint) const SizedBox(height: 12),
+
+              // ===== Summary Card =====
+              _buildSummaryCard(),
+
+              const SizedBox(height: 12),
+
+              // ===== Items Header =====
+              _buildItemsHeader(),
+
+              const SizedBox(height: 8),
+
+              // ===== Details List =====
+              _buildDetailsList(context),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+// ===================== UI: Actions Card =====================
+Widget _buildActionsCard(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.10),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Icon(Icons.print, color: Main_Color),
+            const SizedBox(width: 8),
+            Text(
+              "الطباعة",
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: Colors.grey.shade900,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Main_Color.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                "فاتورة #${widget.fatoraNumber}",
+                style: TextStyle(
+                  color: Main_Color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _primaryActionButton(
+                title: "طباعة PDF",
+                icon: Icons.picture_as_pdf,
+                onTap: () async {
+                  pdfFatoraA4(fatoraItems);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _primaryActionButton(
+                title: "طباعة Zebra",
+                icon: Icons.qr_code_2,
+                onTap: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  final String? macAddressPrinter =
+                      prefs.getString('mac_address_printer');
+                  final String? invoiceHeader = prefs.getString('invoice_header');
+                  final String? shopNo = prefs.getString('shop_no');
+                  final String? userTypePref = prefs.getString('type');
+                  final int? salesman_id = prefs.getInt('salesman_id');
+
+                  var now = DateTime.now();
+                  var formatterDate = DateFormat('yy-MM-dd');
+                  var formatterTime = DateFormat('kk:mm:ss');
+                  String actualDate = formatterDate.format(now);
+                  String actualTime = formatterTime.format(now);
+
+                  if (Platform.isIOS) {
+                    _showDeviceSelectionPopup(
+                      userType: userTypePref.toString(),
+                      macAddress: macAddressPrinter.toString(),
+                      items: fatoraItems,
+                      customerName: widget.customer_name.toString(),
+                      date: actualDate.toString(),
+                      time: actualTime.toString(),
+                      invoiceHeader: invoiceHeader.toString(),
+                      discount: widget.orderDiscount.toString(),
+                      finalTotal: widget.order_total.toString(),
+                      invoiceNumber: widget.fatoraNumber.toString(),
+                      salesManNumber: salesman_id.toString(),
+                      licensedOperator: shopNo.toString(),
+                    );
+                  } else {
+                    _printInvoice(
+                      userType: userTypePref.toString(),
+                      macAddress: macAddressPrinter.toString(),
+                      items: fatoraItems,
+                      customerName: widget.customer_name.toString(),
+                      date: actualDate.toString(),
+                      time: actualTime.toString(),
+                      invoiceHeader: invoiceHeader.toString(),
+                      discount: widget.orderDiscount.toString(),
+                      finalTotal: widget.order_total.toString(),
+                      invoiceNumber: widget.fatoraNumber.toString(),
+                      salesManNumber: salesman_id.toString(),
+                      licensedOperator: shopNo.toString(),
+                    );
+                  }
+
+                  if (userTypePref != "quds") {
+                    updatePrintedValue(widget.id.toString(), "1");
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _primaryActionButton({
+  required String title,
+  required IconData icon,
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(12),
+    onTap: onTap,
+    child: Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: Main_Color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+              fontSize: 14,
             ),
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 30),
-                Visibility(
-                  visible: vansaleCanPrint.toString() == "true",
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 15),
-                        child: ButtonWidget(
-                          name: "طباعة zebra",
-                          height: 40,
-                          width: 100,
-                          BorderColor: Main_Color,
-                          FontSize: 16,
-                          OnClickFunction: () async {
-                            final prefs = await SharedPreferences.getInstance();
-                            final String? macAddressPrinter =
-                                prefs.getString('mac_address_printer');
-                            final String? invoiceHeader =
-                                prefs.getString('invoice_header');
-                            final String? shopNo = prefs.getString('shop_no');
-                            final String? userTypePref = prefs.getString(
-                                'type'); // renamed to avoid shadowing
-                            final int? salesman_id =
-                                prefs.getInt('salesman_id');
+        ],
+      ),
+    ),
+  );
+}
 
-                            var now = DateTime.now();
-                            var formatterDate = DateFormat('yy-MM-dd');
-                            var formatterTime = DateFormat('kk:mm:ss');
-                            String actualDate = formatterDate.format(now);
-                            String actualTime = formatterTime.format(now);
-
-                            if (Platform.isIOS) {
-                              _showDeviceSelectionPopup(
-                                userType: userTypePref.toString(),
-                                macAddress: macAddressPrinter.toString(),
-                                items: fatoraItems,
-                                customerName: widget.customer_name.toString(),
-                                date: actualDate.toString(),
-                                time: actualTime.toString(),
-                                invoiceHeader: invoiceHeader.toString(),
-                                discount: widget.orderDiscount.toString(),
-                                finalTotal: widget.order_total.toString(),
-                                invoiceNumber: widget.fatoraNumber.toString(),
-                                salesManNumber: salesman_id.toString(),
-                                licensedOperator: shopNo.toString(),
-                              );
-                            } else {
-                              _printInvoice(
-                                userType: userTypePref.toString(),
-                                macAddress: macAddressPrinter.toString(),
-                                items: fatoraItems,
-                                customerName: widget.customer_name.toString(),
-                                date: actualDate.toString(),
-                                time: actualTime.toString(),
-                                invoiceHeader: invoiceHeader.toString(),
-                                discount: widget.orderDiscount.toString(),
-                                finalTotal: widget.order_total.toString(),
-                                invoiceNumber: widget.fatoraNumber.toString(),
-                                salesManNumber: salesman_id.toString(),
-                                licensedOperator: shopNo.toString(),
-                              );
-                            }
-
-                            if (userTypePref != "quds") {
-                              updatePrintedValue(widget.id.toString(), "1");
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            }
-                          },
-                          BorderRaduis: 10,
-                          ButtonColor: Main_Color,
-                          NameColor: Colors.white,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 15),
-                        child: ButtonWidget(
-                          name: "طباعة PDF",
-                          height: 40,
-                          width: 100,
-                          BorderColor: Main_Color,
-                          FontSize: 16,
-                          OnClickFunction: () async {
-                            pdfFatoraA4(fatoraItems);
-                          },
-                          BorderRaduis: 10,
-                          ButtonColor: Main_Color,
-                          NameColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 15.0, vertical: 10.0),
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 7,
-                            blurRadius: 5),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('رقم الزبون :  ${widget.customer_id}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 5),
-                        Text('أسم الزبون : ${widget.customer_name}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 5),
-                        Text('الخصم : ${widget.orderDiscount}₪',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 5),
-                        Text(
-                            'مجموع الفاتورة :  ${widget.order_total.toStringAsFixed(2)}₪',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 5),
-                        Text('مجموع الكميات :  ${totalQty.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 5),
-                        Text('مجموع البونص :  ${totalBonus.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 15, left: 10, right: 10),
-                  child: Container(
-                    width: double.infinity,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 7,
-                            blurRadius: 5),
-                      ],
-                    ),
-                    child: Row(
-                      children: const [
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("رقم الصنف",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("أسم الصنف",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("لون الصنف",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("الكمية",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("السعر",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("بونص",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                        Expanded(
-                            flex: 1,
-                            child: Center(
-                                child: Text("المجموع الكلي",
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold)))),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // === Fixed FutureBuilder ===
-                FutureBuilder(
-                  future: _detailsFuture,
-                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Container(
-                        width: double.infinity,
-                        height: MediaQuery.of(context).size.height * 0.4,
-                        child: SpinKitPulse(color: Main_Color, size: 60),
-                      );
-                    }
-
-                    if (!snapshot.hasData || snapshot.data == null) {
-                      return const SizedBox(
-                          height: 60,
-                          child: Center(child: CircularProgressIndicator()));
-                    }
-
-                    final orderDetails = snapshot.data["orders_details"] ?? [];
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      scrollDirection: Axis.vertical,
-                      itemCount: orderDetails.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        // Detect proper quantity/price fields
-                        var qtyRaw = orderDetails[index]['p_quantity'] ??
-                            orderDetails[index]['quantity'];
-                        var priceRaw = orderDetails[index]['p_price'] ??
-                            orderDetails[index]['price'];
-                        var ponusRaw = orderDetails[index]['bonus1'] ??
-                            orderDetails[index]['bonus1'];
-
-                        String cleanPrice(dynamic raw) {
-                          if (raw == null) return "0";
-                          return raw
-                              .toString()
-                              .replaceAll(RegExp(r'[^\d.]'), '');
-                        }
-
-                        var qty =
-                            double.tryParse(qtyRaw?.toString() ?? '0') ?? 0;
-                        var price = double.tryParse(cleanPrice(priceRaw)) ?? 0;
-
-                        var discount = double.tryParse(
-                                orderDetails[index]['discount']?.toString() ??
-                                    '0') ??
-                            0;
-
-                        var init_total = qty * price * (1 - (discount / 100));
-
-                        return order_card(
-                          product_name: orderDetails[index]['product'] != null
-                              ? (orderDetails[index]['product']["p_name"] ??
-                                  "-")
-                              : (orderDetails[index]['product_name'] ?? "-"),
-                          product_id:
-                              orderDetails[index]['product_id']?.toString() ??
-                                  "-",
-                          qty: qtyRaw.toString(),
-                          price: priceRaw.toString(),
-                          ponus: ponusRaw.toString(),
-                          color_name:
-                              orderDetails[index]['color_name']?.toString() ??
-                                  "-",
-                          total: init_total.toStringAsFixed(2),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
+// ===================== UI: Summary Card =====================
+Widget _buildSummaryCard() {
+  return Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.10),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.info_outline, color: Main_Color),
+            const SizedBox(width: 8),
+            Text(
+              "ملخص الفاتورة",
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: Colors.grey.shade900,
+              ),
             ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Grid 2 columns
+        Row(
+          children: [
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.person_outline,
+                title: "رقم الزبون",
+                value: widget.customer_id.toString(),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.account_circle_outlined,
+                title: "اسم الزبون",
+                value: widget.customer_name.toString(),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.discount_outlined,
+                title: "الخصم",
+                value: "${widget.orderDiscount} ₪",
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.payments_outlined,
+                title: "مجموع الفاتورة",
+                value: "${widget.order_total.toStringAsFixed(2)} ₪",
+                isStrong: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.shopping_bag_outlined,
+                title: "مجموع الكميات",
+                value: totalQty.toStringAsFixed(2),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _summaryTile(
+                icon: Icons.card_giftcard_outlined,
+                title: "مجموع البونص",
+                value: totalBonus.toStringAsFixed(2),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _summaryTile({
+  required IconData icon,
+  required String title,
+  required String value,
+  bool isStrong = false,
+}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: Main_Color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Main_Color, size: 20),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade900,
+                  fontWeight: isStrong ? FontWeight.w900 : FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// ===================== UI: Items Header =====================
+Widget _buildItemsHeader() {
+  // Header as a clean “table-like” row
+  return Container(
+    height: 46,
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.95),
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Row(
+      children: const [
+        Expanded(child: Center(child: Text("رقم", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(flex: 2, child: Center(child: Text("الصنف", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(child: Center(child: Text("لون", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(child: Center(child: Text("كمية", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(child: Center(child: Text("سعر", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(child: Center(child: Text("بونص", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+        Expanded(child: Center(child: Text("الإجمالي", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)))),
+      ],
+    ),
+  );
+}
+
+// ===================== UI: Details List (FutureBuilder) =====================
+Widget _buildDetailsList(BuildContext context) {
+  return FutureBuilder(
+    future: _detailsFuture,
+    builder: (BuildContext context, AsyncSnapshot snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return SizedBox(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.35,
+          child: Center(
+            child: SpinKitPulse(color: Colors.white, size: 60),
+          ),
+        );
+      }
+
+      if (!snapshot.hasData || snapshot.data == null) {
+        return Container(
+          height: 90,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const CircularProgressIndicator(),
+        );
+      }
+
+      final orderDetails = snapshot.data["orders_details"] ?? [];
+      if (orderDetails is! List || orderDetails.isEmpty) {
+        return Container(
+          height: 80,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.inbox_outlined, color: Colors.grey.shade700),
+              const SizedBox(width: 10),
+              Text(
+                "لا توجد أصناف",
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: orderDetails.length,
+        itemBuilder: (context, index) {
+          final row = orderDetails[index];
+
+          // same logic you had
+          var qtyRaw = row['p_quantity'] ?? row['quantity'];
+          var priceRaw = row['p_price'] ?? row['price'];
+          var ponusRaw = row['bonus1'] ?? row['bonus1'];
+
+          String cleanPrice(dynamic raw) {
+            if (raw == null) return "0";
+            return raw.toString().replaceAll(RegExp(r'[^\d.]'), '');
+          }
+
+          var qty = double.tryParse(qtyRaw?.toString() ?? '0') ?? 0;
+          var price = double.tryParse(cleanPrice(priceRaw)) ?? 0;
+
+          var discount = double.tryParse(row['discount']?.toString() ?? '0') ?? 0;
+          var init_total = qty * price * (1 - (discount / 100));
+
+          final productName = row['product'] != null
+              ? (row['product']["p_name"] ?? "-")
+              : (row['product_name'] ?? "-");
+
+          return _orderRowPro(
+            index: index,
+            productId: row['product_id']?.toString() ?? "-",
+            productName: productName.toString(),
+            colorName: row['color_name']?.toString() ?? "-",
+            qty: qtyRaw?.toString() ?? "0",
+            price: priceRaw?.toString() ?? "0",
+            bonus: ponusRaw?.toString() ?? "0",
+            total: init_total.toStringAsFixed(2),
+          );
+
+          // إذا بدك تضل تستخدم order_card القديمة بدل التصميم الجديد:
+          // return order_card(
+          //   product_name: productName.toString(),
+          //   product_id: row['product_id']?.toString() ?? "-",
+          //   qty: qtyRaw.toString(),
+          //   price: priceRaw.toString(),
+          //   ponus: ponusRaw.toString(),
+          //   color_name: row['color_name']?.toString() ?? "-",
+          //   total: init_total.toStringAsFixed(2),
+          // );
+        },
+      );
+    },
+  );
+}
+
+// ===================== UI: Row Card =====================
+Widget _orderRowPro({
+  required int index,
+  required String productId,
+  required String productName,
+  required String colorName,
+  required String qty,
+  required String price,
+  required String bonus,
+  required String total,
+}) {
+  final Color bg = index.isEven ? Colors.white : Colors.grey.shade50;
+
+  Widget cell(String text, {int flex = 1, bool bold = false}) {
+    return Expanded(
+      flex: flex,
+      child: Center(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+            color: Colors.grey.shade900,
           ),
         ),
       ),
     );
   }
 
+  return Container(
+    margin: const EdgeInsets.only(top: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 10,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        cell(productId),
+        cell(productName, flex: 2, bold: true),
+        cell(colorName),
+        cell(qty),
+        cell(price),
+        cell(bonus),
+        cell(total, bold: true),
+      ],
+    ),
+  );
+}
   void _showDeviceSelectionPopup({
     required String macAddress,
     required String invoiceHeader,
@@ -572,17 +837,27 @@ class _OrdersDetailsState extends State<OrdersDetails> {
     if (!mounted) return;
 
     try {
+      print("\n═════════════════════════════════════════");
+      print("🔗 CONNECTION PROCESS STARTED");
+      print("═════════════════════════════════════════");
+      print("ℹ️ IMPORTANT REQUIREMENT:");
+      print("   Your Zebra printer MUST be paired with this device first!");
+      print("   Go to: Android Settings → Bluetooth → Pair new device");
+      print("═════════════════════════════════════════\n");
+      
       // Check if there's a valid MAC address
       String effectiveMacAddress =
           macAddress.isNotEmpty ? macAddress : (macAddressPrinter ?? '');
 
+      print("📍 Effective MAC Address: $effectiveMacAddress");
+      print("   (from parameter: $macAddress)");
+      print("   (from storage: $macAddressPrinter)");
+
       if (effectiveMacAddress.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("No printer MAC address configured")),
-          );
-        }
-        return;
+        print("❌ NO MAC ADDRESS FOUND");
+        print("   Error at: MAC address validation");
+        throw Exception(
+            "No printer MAC address configured. Please configure your Zebra printer MAC address in settings first.");
       }
 
       // Check if already connected to the same device
@@ -592,7 +867,7 @@ class _OrdersDetailsState extends State<OrdersDetails> {
         return;
       }
 
-      print("🔍 Searching for bonded devices...");
+      print("\n📱 Searching for bonded devices...");
       List<BluetoothDevice> devices = [];
 
       try {
@@ -600,36 +875,43 @@ class _OrdersDetailsState extends State<OrdersDetails> {
         devices = await bluetooth.getBondedDevices().timeout(
           const Duration(seconds: 3),
           onTimeout: () {
-            print(
-                "⏱️ Timeout waiting for bonded devices, will try direct connection");
+            print("⚠️ TIMEOUT: Bonded devices search timed out (3 seconds)");
+            print("   Will attempt direct connection to $effectiveMacAddress");
             throw TimeoutException('getBondedDevices timed out');
           },
         );
-        print("📱 Found ${devices.length} bonded devices");
+        print("✅ Bonded devices search completed");
+        print("   Found ${devices.length} bonded device(s)");
         for (var device in devices) {
-          print("  - ${device.name} (${device.address})");
+          print("   - ${device.name} (${device.address})");
         }
       } on TimeoutException catch (e) {
-        print("⚠️ Could not get bonded devices list: $e");
-        print("🔌 Will attempt direct connection to $effectiveMacAddress");
+        print("❌ TIMEOUT at: bluetooth.getBondedDevices()");
+        print("   Error: $e");
+        print("   Will attempt direct connection...");
         // Create device object directly for connection
         BluetoothDevice directDevice = BluetoothDevice(
           "Printer",
           effectiveMacAddress,
         );
-        print("🔌 Connecting to printer directly...");
+        print("\n🔌 Attempting direct connection...");
+        print("   Device: Printer");
+        print("   MAC: $effectiveMacAddress");
         try {
           await bluetooth.connect(directDevice).timeout(
             const Duration(seconds: 10),
             onTimeout: () {
+              print("❌ TIMEOUT at: bluetooth.connect() - 10 seconds");
               throw TimeoutException(
                   'Connection timeout - printer may be off or out of range');
             },
           );
           await Future.delayed(const Duration(milliseconds: 500));
-          print("✅ Connected to printer");
+          print("✅ Direct connection successful!");
+          return;
         } catch (connectError) {
-          print("❌ Failed to connect: $connectError");
+          print("❌ FAILED at: bluetooth.connect(directDevice)");
+          print("   Error: $connectError");
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -638,28 +920,33 @@ class _OrdersDetailsState extends State<OrdersDetails> {
           }
           rethrow;
         }
-        return;
       } catch (e) {
-        print("⚠️ Error getting bonded devices: $e");
-        print("🔌 Will attempt direct connection to $effectiveMacAddress");
+        print("❌ ERROR at: bluetooth.getBondedDevices()");
+        print("   Error: $e");
+        print("   Will attempt direct connection...");
         // Create device object directly for connection
         BluetoothDevice directDevice = BluetoothDevice(
           "Printer",
           effectiveMacAddress,
         );
-        print("🔌 Connecting to printer directly...");
+        print("\n🔌 Attempting direct connection...");
+        print("   Device: Printer");
+        print("   MAC: $effectiveMacAddress");
         try {
           await bluetooth.connect(directDevice).timeout(
             const Duration(seconds: 10),
             onTimeout: () {
+              print("❌ TIMEOUT at: bluetooth.connect() - 10 seconds");
               throw TimeoutException(
                   'Connection timeout - printer may be off or out of range');
             },
           );
           await Future.delayed(const Duration(milliseconds: 500));
-          print("✅ Connected to printer");
+          print("✅ Direct connection successful!");
+          return;
         } catch (connectError) {
-          print("❌ Failed to connect: $connectError");
+          print("❌ FAILED at: bluetooth.connect(directDevice)");
+          print("   Error: $connectError");
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -668,64 +955,76 @@ class _OrdersDetailsState extends State<OrdersDetails> {
           }
           rethrow;
         }
-        return;
       }
 
       if (devices.isEmpty) {
-        print("⚠️ No bonded devices found");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    "No bonded Bluetooth devices found. Please pair your printer first.")),
-          );
-        }
-        return;
+        print("❌ NO BONDED DEVICES FOUND");
+        print("   Error at: devices list is empty");
+        print("   Message: No bonded Bluetooth devices found");
+        print("   Action: Please pair your printer first");
+        throw Exception(
+            "No bonded devices found. Please pair your Zebra printer with your device first in Android Settings > Bluetooth");
       }
 
       BluetoothDevice? targetDevice;
       try {
+        print("\n🔍 Searching for target device in bonded list...");
+        print("   Looking for MAC: $effectiveMacAddress");
         targetDevice = devices.firstWhere(
           (d) => d.address == effectiveMacAddress,
         );
+        print("✅ Target device found!");
+        print("   Name: ${targetDevice.name}");
+        print("   MAC: ${targetDevice.address}");
       } catch (e) {
+        print("❌ TARGET DEVICE NOT FOUND");
+        print("   Error at: devices.firstWhere()");
+        print("   Looking for: $effectiveMacAddress");
+        print("   Available devices:");
+        for (var d in devices) {
+          print("     - ${d.name} (${d.address})");
+        }
         targetDevice = null;
       }
 
       if (targetDevice == null) {
-        print("❌ Printer device not found: $effectiveMacAddress");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text("Printer device not found: $effectiveMacAddress")),
-          );
-        }
-        return;
+        print("❌ DEVICE NOT FOUND IN BONDED LIST");
+        print("   Error at: targetDevice validation");
+        print("   MAC Address: $effectiveMacAddress");
+        throw Exception(
+            "Printer with MAC $effectiveMacAddress not found in bonded devices. Please check the MAC address and pair the device first.");
       }
 
-      print("✅ Found printer: ${targetDevice.name} (${targetDevice.address})");
-      print("🔌 Connecting to printer...");
+      print("\n🔌 Connecting to device...");
+      print("   Device: ${targetDevice.name}");
+      print("   MAC: ${targetDevice.address}");
 
       try {
         await bluetooth.connect(targetDevice).timeout(
           const Duration(seconds: 10),
-          onTimeout: () => throw TimeoutException(
-              'Connection timeout - printer may be off or out of range'),
+          onTimeout: () {
+            print("❌ TIMEOUT at: bluetooth.connect(targetDevice) - 10 seconds");
+            throw TimeoutException(
+                'Connection timeout - printer may be off or out of range');
+          },
         );
         
-        // Give it a moment to establish connection
         await Future.delayed(const Duration(milliseconds: 500));
 
         // Verify the connection was successful
         bool? connectedCheck = await bluetooth.isConnected;
         if (connectedCheck != true) {
+          print("❌ CONNECTION VERIFICATION FAILED");
+          print("   Error at: isConnected check after connect()");
+          print("   isConnected returned: $connectedCheck");
           throw Exception("Connection established but verification failed");
         }
 
-        print("✅ Connected to printer");
+        print("✅ ✅ ✅ CONNECTION SUCCESSFUL!");
+        print("═════════════════════════════════════════\n");
       } catch (e) {
-        print("❌ Failed to connect: $e");
+        print("❌ FAILED at: bluetooth.connect()");
+        print("   Error: $e");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Failed to connect to printer: $e")),
@@ -734,7 +1033,10 @@ class _OrdersDetailsState extends State<OrdersDetails> {
         rethrow;
       }
     } catch (e) {
-      print("❌ Error in connection process: $e");
+      print("❌ ❌ ❌ CONNECTION PROCESS FAILED");
+      print("Error at: _connectToAndroidDevice");
+      print("Error: $e");
+      print("═════════════════════════════════════════\n");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Connection failed: $e")),
@@ -918,66 +1220,115 @@ class _OrdersDetailsState extends State<OrdersDetails> {
       if (!mounted) return;
       setState(() => isProcessing = true);
 
-      // Connect to the device
-      await _connectToAndroidDevice(macAddress);
+      // STEP 1: Connect to device
+      print("⏸️ STEP 1: Connecting to printer at $macAddress...");
+      try {
+        await _connectToAndroidDevice(macAddress);
+        print("✅ STEP 1 SUCCESS: Connected to printer");
+      } catch (e) {
+        print("❌ STEP 1 FAILED: Connection error - $e");
+        print("   Error at: _connectToAndroidDevice");
+        throw Exception("Connection failed: $e");
+      }
 
-      // Verify connection before printing
-      bool? isConnected = await bluetooth.isConnected;
-      if (isConnected != true) {
+      // STEP 2: Verify connection
+      print("⏸️ STEP 2: Verifying connection...");
+      try {
+        bool? isConnected = await bluetooth.isConnected;
+        if (isConnected != true) {
+          print("❌ STEP 2 FAILED: Printer is not connected after connection attempt");
+          print("   isConnected value: $isConnected");
+          throw Exception("Printer disconnected after connection attempt");
+        }
+        print("✅ STEP 2 SUCCESS: Connection verified");
+      } catch (e) {
+        print("❌ STEP 2 FAILED: Verification error - $e");
+        print("   Error at: bluetooth.isConnected check");
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Failed to connect to printer")),
+            SnackBar(content: Text("Failed to verify connection: $e")),
           );
         }
         return;
       }
 
-      final invoiceZPL = generateInvoiceZPL(
-        invoiceHeader: invoiceHeader,
-        userType: userType,
-        items: items,
-        invoiceNumber: invoiceNumber,
-        licensedOperator: licensedOperator,
-        date: date,
-        time: time,
-        customerName: customerName,
-        salesManNumber: salesManNumber,
-        discount: discount,
-        finalTotal: finalTotal,
-      );
-
-      print("📄 Generated ZPL length: ${invoiceZPL.length} characters");
-      print("📤 Writing ZPL to printer...");
-
-      // Write the ZPL to the printer
-      bool writeSuccess = await bluetooth.write(invoiceZPL);
-      
-      print("✍️ Write result: $writeSuccess");
-      
-      if (!writeSuccess) {
-        throw Exception("Failed to write data to printer");
+      // STEP 3: Generate ZPL
+      print("⏸️ STEP 3: Generating ZPL invoice...");
+      String invoiceZPL = "";
+      try {
+        invoiceZPL = generateInvoiceZPL(
+          invoiceHeader: invoiceHeader,
+          userType: userType,
+          items: items,
+          invoiceNumber: invoiceNumber,
+          licensedOperator: licensedOperator,
+          date: date,
+          time: time,
+          customerName: customerName,
+          salesManNumber: salesManNumber,
+          discount: discount,
+          finalTotal: finalTotal,
+        );
+        print("✅ STEP 3 SUCCESS: ZPL generated (${invoiceZPL.length} characters)");
+      } catch (e) {
+        print("❌ STEP 3 FAILED: ZPL generation error - $e");
+        print("   Error at: generateInvoiceZPL");
+        throw Exception("Failed to generate invoice: $e");
       }
 
-      // Wait for printer to process the data
-      await Future.delayed(const Duration(milliseconds: 500));
+      // STEP 4: Send ZPL to printer
+      print("⏸️ STEP 4: Sending ZPL to printer (${invoiceZPL.length} chars)...");
+      bool writeSuccess = false;
+      try {
+        writeSuccess = await bluetooth.write(invoiceZPL);
+        if (!writeSuccess) {
+          print("❌ STEP 4 FAILED: Printer returned false for write operation");
+          print("   bluetooth.write() returned: $writeSuccess");
+          throw Exception("Printer rejected the data");
+        }
+        print("✅ STEP 4 SUCCESS: ZPL sent to printer successfully");
+      } catch (e) {
+        print("❌ STEP 4 FAILED: Write error - $e");
+        print("   Error at: bluetooth.write(invoiceZPL)");
+        throw Exception("Failed to send data: $e");
+      }
 
+      // STEP 5: Wait for printer processing
+      print("⏸️ STEP 5: Waiting for printer to process...");
+      try {
+        await Future.delayed(const Duration(milliseconds: 500));
+        print("✅ STEP 5 SUCCESS: Printer processing complete");
+      } catch (e) {
+        print("⚠️ STEP 5 WARNING: Delay error - $e");
+      }
+
+      // SUCCESS
+      print("✅ ✅ ✅ PRINTING COMPLETE - Invoice printed successfully!");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Invoice printed successfully!")),
         );
       }
     } catch (e) {
-      print("❌ Printing error: $e");
+      print("\n❌ ❌ ❌ PRINTING FAILED");
+      print("ERROR: $e");
+      print("Time: ${DateTime.now()}");
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error printing invoice: $e")),
+          SnackBar(
+            content: Text("ERROR: $e"),
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } finally {
+      print("⏸️ CLEANUP: Disconnecting from printer...");
       // Disconnect silently without showing additional snackbars
       await _disconnectFromAndroidDeviceSilently();
       if (!mounted) return;
       setState(() => isProcessing = false);
+      print("✅ CLEANUP COMPLETE");
     }
   }
 
@@ -1117,10 +1468,150 @@ $invoiceHeader
     if (isOffline) {
       final dbHelper = CartDatabaseHelper();
       List<Map<String, dynamic>> items = [];
+      
+      print("\n═══════════════════════════════════════════");
+      print("🔵 OFFLINE MODE ACTIVATED");
+      print("═══════════════════════════════════════════");
+      print("📍 Order ID (fatoraID): ${widget.fatoraID}");
+      print("📍 Order ID (id): ${widget.id}");
+      print("📍 Type: $type");
+      
+      print("🔍 Preparing to parse IDs...");
+      print("   fatoraID type: ${widget.fatoraID.runtimeType}");
+      print("   fatoraID value: '${widget.fatoraID}'");
+      print("   id type: ${widget.id.runtimeType}");
+      print("   id value: ${widget.id}");
+      
+      int primaryOrderId = 0;
+      int fallbackOrderId = 0;
+      
+      try {
+        primaryOrderId = int.parse(widget.fatoraID.toString().trim());
+        print("✅ primaryOrderId parsed: $primaryOrderId");
+      } catch (e) {
+        print("❌ ERROR parsing primaryOrderId: $e");
+        primaryOrderId = 0;
+      }
+      
+      try {
+        fallbackOrderId = int.parse(widget.id.toString().trim());
+        print("✅ fallbackOrderId set: $fallbackOrderId");
+      } catch (e) {
+        print("❌ ERROR setting fallbackOrderId: $e");
+        fallbackOrderId = 0;
+      }
+      
+      print("🔍 Starting database queries with primaryOrderId=$primaryOrderId, fallbackOrderId=$fallbackOrderId");
+      
       if (type == "quds") {
-        items = await dbHelper.getOrderItemsQuds(int.parse(widget.fatoraID));
+        print("🔍 [1/3] Calling: dbHelper.getOrderItemsQuds($primaryOrderId)");
+        try {
+          items = await dbHelper.getOrderItemsQuds(primaryOrderId).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print("⏱️ TIMEOUT: getOrderItemsQuds($primaryOrderId) took too long!");
+              return [];
+            },
+          );
+          print("✅ [1/3] Query completed with ${items.length} items");
+        } catch (e) {
+          print("❌ [1/3] Query error: $e");
+          items = [];
+        }
+        
+        // Fallback: if no items with fatoraID, try with id
+        if (items.isEmpty && fallbackOrderId != 0 && fallbackOrderId != primaryOrderId) {
+          print("⚠️  [2/3] No items found with fatoraID ($primaryOrderId), trying with id ($fallbackOrderId)...");
+          try {
+            items = await dbHelper.getOrderItemsQuds(fallbackOrderId).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print("⏱️ TIMEOUT: getOrderItemsQuds($fallbackOrderId) took too long!");
+                return [];
+              },
+            );
+            if (items.isNotEmpty) {
+              print("✅ [2/3] Found ${items.length} items using fallback ID ($fallbackOrderId)!");
+            } else {
+              print("❌ [2/3] Fallback query returned 0 items");
+            }
+          } catch (e) {
+            print("❌ [2/3] Fallback query error: $e");
+          }
+        }
       } else {
-        items = await dbHelper.getOrderItemsVansale(int.parse(widget.fatoraID));
+        print("🔍 [1/3] Calling: dbHelper.getOrderItemsVansale($primaryOrderId)");
+        try {
+          items = await dbHelper.getOrderItemsVansale(primaryOrderId).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print("⏱️ TIMEOUT: getOrderItemsVansale($primaryOrderId) took too long!");
+              return [];
+            },
+          );
+          print("✅ [1/3] Query completed with ${items.length} items");
+        } catch (e) {
+          print("❌ [1/3] Query error: $e");
+          items = [];
+        }
+        
+        // Fallback: if no items with fatoraID, try with id
+        if (items.isEmpty && fallbackOrderId != 0 && fallbackOrderId != primaryOrderId) {
+          print("⚠️  [2/3] No items found with fatoraID ($primaryOrderId), trying with id ($fallbackOrderId)...");
+          try {
+            items = await dbHelper.getOrderItemsVansale(fallbackOrderId).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print("⏱️ TIMEOUT: getOrderItemsVansale($fallbackOrderId) took too long!");
+                return [];
+              },
+            );
+            if (items.isNotEmpty) {
+              print("✅ [2/3] Found ${items.length} items using fallback ID ($fallbackOrderId)!");
+            } else {
+              print("❌ [2/3] Fallback query returned 0 items");
+            }
+          } catch (e) {
+            print("❌ [2/3] Fallback query error: $e");
+          }
+        }
+      }
+      
+      print("🔍 [3/3] Retrieved ${items.length} items from local database");
+      
+      if (items.isEmpty) {
+        print("⚠️  WARNING: No items returned from database!");
+        print("   This means the database query returned an empty list.");
+        print("   Possible causes:");
+        print("   1. Order ID ${widget.fatoraID} doesn't exist in the database");
+        print("   2. Items were not saved to the database");
+        print("   3. Database table has no records");
+        
+        // Diagnostic: Check what order_ids actually exist in the database
+        print("\n🔍 DIAGNOSTIC: Checking what order_ids exist in database...");
+        try {
+          final db = await dbHelper.database;
+          final allItems = await db!.query('order_items', limit: 10);
+          print("   Total items in order_items table: ${allItems.length}");
+          if (allItems.isNotEmpty) {
+            print("   Sample items (first 5):");
+            for (int i = 0; i < allItems.length && i < 5; i++) {
+              print("   [$i] order_id: ${allItems[i]['order_id']}, product_id: ${allItems[i]['product_id']}");
+            }
+            print("\n   🚨 TIP: The database HAS items, but with different order_id values!");
+            print("   Try using widget.id (${widget.id}) instead of widget.fatoraID (${widget.fatoraID})");
+          } else {
+            print("   ❌ The order_items table is completely empty!");
+          }
+        } catch (e) {
+          print("   Error during diagnostic: $e");
+        }
+      } else {
+        print("📋 First item structure:");
+        print("   Keys: ${items.first.keys.toList()}");
+        for (var key in items.first.keys) {
+          print("   - $key: ${items.first[key]}");
+        }
       }
 
       fatoraItems.clear();
@@ -1143,7 +1634,22 @@ $invoiceHeader
         );
       }
       _recomputeTotals();
-      return {"orders_details": items};
+      
+      print("✅ Populated fatoraItems with ${fatoraItems.length} items");
+      print("═══════════════════════════════════════════\n");
+      
+      // Return restructured data to match online format
+      List<Map<String, dynamic>> restructuredItems = items.map((item) {
+        return {
+          ...item,
+          'p_quantity': item['quantity'],
+          'p_price': item['price'],
+          'color_name': item['color_name'] ?? '',
+          'product': null,
+        };
+      }).toList();
+      
+      return {"orders_details": restructuredItems};
     }
 
     var url = type == "quds"
@@ -1567,7 +2073,7 @@ $invoiceHeader
           ),
         pw.SizedBox(height: 10),
         pw.Row(mainAxisAlignment: pw.MainAxisAlignment.end, children: [
-          pw.Text(computedTotal.toString(),
+          pw.Text(computedTotal.toStringAsFixed(2),
               style:
                   pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 17)),
           pw.SizedBox(width: 5),

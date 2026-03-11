@@ -159,9 +159,12 @@ Future<void> sendShipmentDynamic({
       "cityId": 8
     }
   });
+  print("shipment request body: $body");
 
   try {
     final response = await http.post(url, headers: headers, body: body);
+    print("shipment response status: ${response.statusCode}");
+    print("shipment response body: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

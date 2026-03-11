@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=/Users/mac/development/flutter"
-export "FLUTTER_APPLICATION_PATH=/Users/mac/Downloads/quds_merged_yaghm/packages/speech_to_text_fixed/example"
+export "FLUTTER_ROOT=C:\Users\Hakem\Downloads\flutter_windows_3.35.5-stable\flutter"
+export "FLUTTER_APPLICATION_PATH=D:\Quds Accounting\Quds-Accounting-App\packages\speech_to_text_fixed\example"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.1.0"

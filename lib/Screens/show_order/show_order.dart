@@ -66,34 +66,74 @@ class _ShowOrderState extends State<ShowOrder> {
                     Padding(
                       padding: const EdgeInsets.only(
                           right: 15, left: 15, top: 15, bottom: 15),
-                      child: Row(
-                        children: [
-                          const Text(
-                            "أسم الزبون : ",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            widget.name ?? "",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Main_Color,
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xff34568B).withOpacity(0.1),
+                                Color(0xff34568B).withOpacity(0.05),
+                              ],
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xff34568B).withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
                           ),
-                        ],
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Icon(Icons.person,
+                                  color: Color(0xff34568B), size: 28),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "أسم الزبون",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      widget.name ?? "",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: Color(0xff34568B),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
 
-                    // بطاقة الملخّص (مجاميع الكميات والبونص)
+                    // بطاقة الملخّص (مجاميع الكميات والبونص وعدد الأصناف)
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 5),
+                          horizontal: 15, vertical: 8),
                       child: _TotalsCard(
                         qtyTotal: sumQty(items),
                         bonus1Total: sumBonus1(items),
-                        bonus2Total: sumBonus2(items),
+                        itemCount: items.length,
                       ),
                     ),
 
@@ -213,77 +253,97 @@ class _ShowOrderState extends State<ShowOrder> {
   Widget BottomContainer(
       {var total, var fatora_id, List<CartItem>? cartItems}) {
     return Container(
-      height: 50,
+      height: 65,
       width: double.infinity,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.only(left: 10, right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Total Display
             Row(
               children: [
-                Text(
-                  "المجموع : ",
-                  style: GoogleFonts.cairo(
-                    fontSize: 17,
-                    color: Colors.black,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-                Text(
-                  "₪${total % 1 == 0 ? total.toStringAsFixed(0) : total.toStringAsFixed(2)}",
-                  style: GoogleFonts.cairo(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Main_Color,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ],
-            ),
-            Card(
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddOrder(
-                        total:
-                            "${total % 1 == 0 ? total.toStringAsFixed(0) : total.toStringAsFixed(2)}",
-                        id: widget.id,
-                        fatora_id: fatora_id,
-                        customer_name: widget.name,
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: 120,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    gradient: const LinearGradient(colors: [
-                      Color.fromRGBO(83, 89, 219, 1),
-                      Color.fromRGBO(32, 39, 160, 0.6),
-                    ]),
-                  ),
-                  child: Center(
-                    child: Text(
-                      type.toString() == "quds"
-                          ? "حفظ الطلبية"
-                          : "حفظ الفاتورة",
+                Icon(Icons.attach_money,
+                    color: Color(0xff34568B), size: 20),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "المجموع الكلي",
                       style: GoogleFonts.cairo(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.white,
+                        fontSize: 10,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
                         decoration: TextDecoration.none,
                       ),
                     ),
-                  ),
+                    Text(
+                      "${total % 1 == 0 ? total.toStringAsFixed(0) : total.toStringAsFixed(2)} ₪",
+                      style: GoogleFonts.cairo(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff34568B),
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+            // Save Button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xff34568B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                elevation: 4,
+                shadowColor: Color(0xff34568B).withOpacity(0.4),
               ),
-            )
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddOrder(
+                      total:
+                          "${total % 1 == 0 ? total.toStringAsFixed(0) : total.toStringAsFixed(2)}",
+                      id: widget.id,
+                      fatora_id: fatora_id,
+                      customer_name: widget.name,
+                    ),
+                  ),
+                );
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.save,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    type.toString() == "quds"
+                        ? "حفظ الطلبية"
+                        : "حفظ الفاتورة",
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -451,13 +511,13 @@ class _ShowOrderState extends State<ShowOrder> {
 class _TotalsCard extends StatelessWidget {
   final double qtyTotal;
   final double bonus1Total;
-  final double bonus2Total;
+  final int itemCount;
 
   const _TotalsCard({
     Key? key,
     required this.qtyTotal,
     required this.bonus1Total,
-    required this.bonus2Total,
+    required this.itemCount,
   }) : super(key: key);
 
   String _fmt(num v) =>
@@ -487,7 +547,7 @@ class _TotalsCard extends StatelessWidget {
             const SizedBox(width: 8),
             _StatBox(title: "مجموع بونص 1", value: _fmt(bonus1Total)),
             const SizedBox(width: 8),
-            _StatBox(title: "مجموع بونص 2", value: _fmt(bonus2Total)),
+            _StatBox(title: "عدد الأصناف", value: itemCount.toString()),
           ],
         ),
       ),

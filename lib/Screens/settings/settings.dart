@@ -102,72 +102,84 @@ class _SettingsState extends State<Settings> {
               Visibility(
                 visible: globals.JUST,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 25, right: 15, left: 15),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        "رقم المخزن",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                  padding: const EdgeInsets.only(right: 15, left: 15, top: 15, bottom: 8),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xff34568B).withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              Visibility(
-                visible: globals.JUST,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                  child: SizedBox(
-                    height: 50,
-                    width: double.infinity,
-                    child: TextField(
-                      controller: idController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        // يسمح بالأرقام فقط
-                        FilteringTextInputFormatter.digitsOnly,
-                        // حد أقصى رقمين
-                        LengthLimitingTextInputFormatter(2),
-                      ],
-                      onChanged: (value) async {
-                        // لو حاول إدخال أكثر من رقمين (حماية إضافية)
-                        if (value.length > 2) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'لا يمكن إدخال أكثر من رقمين',
-                                textAlign: TextAlign.right,
-                              ),
-                              backgroundColor: Colors.red,
-                              duration: Duration(seconds: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "رقم المخزن",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
                             ),
-                          );
-                          return;
-                        }
-
-                        // حفظ القيمة فقط إذا كانت صالحة
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('store_id', value);
-                      },
-                      decoration: InputDecoration(
-                        hintText: "رقم المخزن",
-                        counterText: "", // إخفاء عداد الأحرف
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: Color(0xff34568B),
-                            width: 2.0,
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            width: 2.0,
-                            color: Color(0xffD6D3D3),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.storefront,
+                                  color: Color(0xff34568B), size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: idController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(2),
+                                  ],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                  onChanged: (value) async {
+                                    if (value.length > 2) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'لا يمكن إدخال أكثر من رقمين',
+                                            textAlign: TextAlign.right,
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('store_id', value);
+                                  },
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "رقم المخزن",
+                                    counterText: "",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -175,44 +187,68 @@ class _SettingsState extends State<Settings> {
               ),
 
               Padding(
-                padding: const EdgeInsets.only(top: 25, right: 15, left: 15),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "أسم الشركة",
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xff34568B).withOpacity(0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(right: 15, left: 15, top: 5),
-                child: Container(
-                  height: 50,
-                  width: double.infinity,
-                  child: TextField(
-                    controller: companyNameController1,
-                    obscureText: false,
-                    onChanged: (_) async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      await prefs.setString(
-                          'store_name_1', companyNameController1.text);
-                    },
-                    decoration: InputDecoration(
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            BorderSide(color: Color(0xff34568B), width: 2.0),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            BorderSide(width: 2.0, color: Color(0xffD6D3D3)),
-                      ),
-                      hintText: "أسم الشركة",
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "أسم الشركة",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.business,
+                                color: Color(0xff34568B), size: 22),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextField(
+                                controller: companyNameController1,
+                                obscureText: false,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                                onChanged: (_) async {
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setString(
+                                      'store_name_1', companyNameController1.text);
+                                },
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "أسم الشركة",
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -221,152 +257,191 @@ class _SettingsState extends State<Settings> {
               Visibility(
                 visible: globals.JUST,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                   child: ElevatedButton.icon(
-                      icon: Icon(Icons.refresh),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    icon: Icon(Icons.refresh, size: 22),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      label: Text(
-                        "تحديث صور المنتجات",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                      elevation: 4,
+                      shadowColor: Colors.green.withOpacity(0.4),
+                    ),
+                    label: Text(
+                      "تحديث صور المنتجات",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      onPressed: () async {
-                        ValueNotifier<String> message = ValueNotifier<String>(
-                            "📥 Fetching product images...");
-                        ValueNotifier<double> progress =
-                            ValueNotifier<double>(0.0);
+                    ),
+                    onPressed: () async {
+                      ValueNotifier<String> message = ValueNotifier<String>(
+                          "📥 Fetching product images...");
+                      ValueNotifier<double> progress =
+                          ValueNotifier<double>(0.0);
 
-                        showProgressDialog(context, message, progress);
+                      showProgressDialog(context, message, progress);
 
-                        try {
-                          await dataDownloader.updateProductImagesFromApiOnly(
-                              progress, message);
-                        } catch (e) {
-                          Fluttertoast.showToast(
-                            msg: "❌ Error updating product images: $e",
-                            backgroundColor: Colors.red,
-                          );
-                        } finally {
-                          if (Navigator.canPop(context)) {
-                            Navigator.of(context, rootNavigator: true).pop();
-                          }
+                      try {
+                        await dataDownloader.updateProductImagesFromApiOnly(
+                            progress, message);
+                      } catch (e) {
+                        Fluttertoast.showToast(
+                          msg: "❌ Error updating product images: $e",
+                          backgroundColor: Colors.red,
+                        );
+                      } finally {
+                        if (Navigator.canPop(context)) {
+                          Navigator.of(context, rootNavigator: true).pop();
                         }
-                      }),
+                      }
+                    },
+                  ),
                 ),
               ),
               Visibility(
                 visible: companies!.length == 2 || companies!.length == 3
                     ? true
                     : false,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 25, right: 15, left: 15),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xff34568B).withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "أسم الشركة الثانية",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.business_center,
+                                  color: Color(0xff34568B), size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: companyNameController2,
+                                  obscureText: false,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                  onChanged: (_) async {
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                        'store_name_2', companyNameController2.text);
+                                  },
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "أسم الشركة الثانية",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 15, left: 15, top: 5),
-                      child: Container(
-                        height: 50,
-                        width: double.infinity,
-                        child: TextField(
-                          controller: companyNameController2,
-                          obscureText: false,
-                          onChanged: (_) async {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.setString(
-                                'store_name_2', companyNameController2.text);
-                          },
-                          decoration: InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                  color: Color(0xff34568B), width: 2.0),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                  width: 2.0, color: Color(0xffD6D3D3)),
-                            ),
-                            hintText: "أسم الشركة الثانية",
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               Visibility(
                 visible: companies!.length == 3 ? true : false,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 25, right: 15, left: 15),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 15, left: 15, top: 8, bottom: 8),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xff34568B).withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "أسم الشركة الثالثة",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.domain,
+                                  color: Color(0xff34568B), size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextField(
+                                  controller: companyNameController3,
+                                  obscureText: false,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                  onChanged: (_) async {
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                        'store_name_3', companyNameController3.text);
+                                  },
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "أسم الشركة الثالثة",
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 15, left: 15, top: 5),
-                      child: Container(
-                        height: 50,
-                        width: double.infinity,
-                        child: TextField(
-                          controller: companyNameController3,
-                          obscureText: false,
-                          onChanged: (_) async {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.setString(
-                                'store_name_3', companyNameController3.text);
-                          },
-                          decoration: InputDecoration(
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                  color: Color(0xff34568B), width: 2.0),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide(
-                                  width: 2.0, color: Color(0xffD6D3D3)),
-                            ),
-                            hintText: "أسم الشركة الثالثة",
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               // Visibility(
@@ -406,19 +481,26 @@ class _SettingsState extends State<Settings> {
               //   ),
               // ),
               Padding(
-                padding: const EdgeInsets.only(top: 20, right: 25, left: 25),
-                child: Container(
+                padding: const EdgeInsets.only(top: 15, right: 15, left: 15, bottom: 20),
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 7,
-                            blurRadius: 5,
-                          ),
-                        ],
-                        borderRadius: BorderRadius.circular(4),
-                        color: Colors.white),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.06),
+                        ),
+                      ],
+                      border: Border.all(color: Colors.grey.shade100),
+                    ),
                     child: Column(
                       children: [
                         Visibility(
@@ -427,11 +509,11 @@ class _SettingsState extends State<Settings> {
                             children: [
                               SettingsCard(
                                 status: globals.isOnline,
+                                icon: Icons.cloud_done,
                                 Status: () async {
                                   setState(() {
                                     globals.isOnline = !globals.isOnline;
                                   });
-                                  // globals.isOnline = !globals.isOnline;
                                   if (globals.isOnline) {
                                     SharedPreferences prefs =
                                         await SharedPreferences.getInstance();
@@ -481,7 +563,6 @@ class _SettingsState extends State<Settings> {
                                           msg: 'Failed to download data');
                                     } finally {
                                       if (Navigator.canPop(context)) {
-                                        // ✅ Ensure there is an open dialog before closing
                                         Navigator.of(context,
                                                 rootNavigator: true)
                                             .pop();
@@ -507,6 +588,7 @@ class _SettingsState extends State<Settings> {
                                     ),
                                     SettingsCard(
                                       status: globals.productStyleTwo,
+                                      icon: Icons.receipt_long,
                                       Status: () async {
                                         setState(() {
                                           globals.productStyleTwo =
@@ -533,6 +615,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.productImage,
+                                icon: Icons.image,
                                 Status: () async {
                                   setState(() {
                                     globals.productImage =
@@ -555,6 +638,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.ponus1,
+                                icon: Icons.card_giftcard,
                                 Status: () async {
                                   setState(() {
                                     globals.ponus1 = !globals.ponus1;
@@ -575,6 +659,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.ponus2,
+                                icon: Icons.card_travel,
                                 name: "اظهار بونص 2",
                                 Status: () async {
                                   setState(() {
@@ -595,6 +680,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.discountSetting,
+                                icon: Icons.local_offer,
                                 Status: () async {
                                   setState(() {
                                     globals.discountSetting =
@@ -617,6 +703,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.notes,
+                                icon: Icons.notes,
                                 Status: () async {
                                   setState(() {
                                     globals.notes = !globals.notes;
@@ -637,6 +724,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.existed_qty,
+                                icon: Icons.inventory_2,
                                 Status: () async {
                                   setState(() {
                                     globals.existed_qty = !globals.existed_qty;
@@ -658,6 +746,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.hideProductLessThan0,
+                                icon: Icons.block,
                                 Status: () async {
                                   setState(() {
                                     globals.hideProductLessThan0 =
@@ -680,6 +769,7 @@ class _SettingsState extends State<Settings> {
                               ),
                               SettingsCard(
                                 status: globals.deliveryDate,
+                                icon: Icons.calendar_today,
                                 Status: () async {
                                   setState(() {
                                     globals.deliveryDate =
@@ -705,6 +795,7 @@ class _SettingsState extends State<Settings> {
                         ),
                         SettingsCard(
                           status: globals.order_kashf_from_new_to_old,
+                          icon: Icons.unfold_more,
                           Status: () async {
                             setState(() {
                               globals.order_kashf_from_new_to_old =
@@ -731,6 +822,7 @@ class _SettingsState extends State<Settings> {
                             children: [
                               SettingsCard(
                                 status: globals.desc,
+                                icon: Icons.description,
                                 Status: () async {
                                   setState(() {
                                     globals.desc = !globals.desc;
@@ -748,7 +840,9 @@ class _SettingsState extends State<Settings> {
                           ),
                         )
                       ],
-                    )),
+                    ),
+              ),
+              ),
               ),
             ],
           )),

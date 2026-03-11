@@ -14,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../LocalDB/Models/CartModel.dart';
 import '../../../LocalDB/Provider/CartProvider.dart';
-import '../../../Server/server.dart';
+import '../../../Server/server.dart' as globals;
 
 class ProductCardQuds extends StatefulWidget {
   final image, name, desc, price_code, id;
@@ -47,8 +47,6 @@ class ProductCardQuds extends StatefulWidget {
 
   /// 🔁 Reusable method to build image from network or file
   static Widget buildImage(String? imagePath) {
-    print("imagePath");
-    print(imagePath);
     if (imagePath == null || imagePath.trim().isEmpty) {
       return Image.asset("assets/quds_logo.jpeg", fit: BoxFit.fill);
     }
@@ -60,7 +58,8 @@ class ProductCardQuds extends StatefulWidget {
         cleanedPath.startsWith("https://")) {
       return Image.network(
         cleanedPath,
-        fit: BoxFit.fill,
+        filterQuality:
+                              FilterQuality.high,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
 
@@ -83,19 +82,27 @@ class ProductCardQuds extends StatefulWidget {
     if (File(cleanedPath).existsSync()) {
       return Image.file(
         File(cleanedPath),
-        fit: BoxFit.fill,
+        fit: BoxFit.contain,
         errorBuilder: (_, __, ___) =>
-            Image.asset("assets/quds_logo.jpeg", fit: BoxFit.fill),
+            Image.asset("assets/quds_logo.jpeg", filterQuality:
+                              FilterQuality.high,),
       );
     }
 
     // ✅ Fallback
-    return Image.asset("assets/quds_logo.jpeg", fit: BoxFit.fill);
+    return Image.asset("assets/quds_logo.jpeg", filterQuality:
+                              FilterQuality.high,);
   }
 }
 
 class _ProductCardQudsState extends State<ProductCardQuds> {
   String? localImagePath;
+    int selectedQty = 0;
+
+  int get maxQty {
+    final q = int.tryParse(widget.qty.toString()) ?? 0;
+    return q < 0 ? 0 : q;
+  }
 
   @override
   void initState() {
@@ -122,17 +129,123 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
   Widget _buildImage(String? imagePath) {
     return ProductCardQuds.buildImage(imagePath);
   }
+    void _toast(String msg) {
+    Fluttertoast.showToast(msg: msg);
+    Timer(const Duration(milliseconds: 600), () => Fluttertoast.cancel());
+  }
+
+  Widget _qtySelector() {
+    final canMinus = selectedQty > 0;
+    final canPlus = true;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 40,
+      child: Row(
+        children: [
+          const Text(
+            "الكمية:",
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: canMinus ? () => setState(() => selectedQty--) : null,
+            icon: Icon(Icons.remove_circle_outline,
+                color: canMinus ? globals.Main_Color : Colors.grey),
+          ),
+          Text(
+            selectedQty.toString(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          IconButton(
+            onPressed: canPlus ? () => setState(() => selectedQty++) : null,
+            icon: Icon(Icons.add_circle_outline,
+                color: canPlus ? globals.Main_Color : Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addToFatora(CartProvider cartProvider) async {
+    // if (maxQty == 0) {
+    //   _toast("المنتج غير متوفر حالياً");
+    //   return;
+    // }
+
+    if (selectedQty <= 0) {
+      _toast("اختار الكمية أولاً");
+      return;
+    }
+
+    // if (selectedQty > maxQty) {
+    //   _toast("الكمية أكبر من المتوفر");
+    //   return;
+    // }
+
+    if ((widget.product_colors as List).isEmpty) {
+      final newItem = CartItem(
+        productBarcode: "",
+        quantityexists: 0,
+        productId: widget.id.toString(),
+        color: "",
+        colorsNames: [],
+        name: widget.name,
+        image: localImagePath.toString(),
+        notes: "-",
+        price: double.parse(widget.price.toString()),
+        discount: 0.0,
+        quantity: selectedQty.toDouble(),
+        ponus1: "0",
+        ponus2: "0",
+      );
+
+      cartProvider.addToCart(newItem);
+      _toast("تم اضافة المنتج");
+      setState(() => selectedQty = 0);
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddProduct(
+          isOnline: globals.isOnline,
+          checkProductBarcode20or13: false,
+          checkProductBarcode: true,
+          productBarcode: "",
+          packingNumber: widget.packingNumber,
+          packingPrice: widget.packingPrice,
+          id: widget.id,
+          name: widget.name,
+          productUnit: widget.productUnit.toString(),
+          productColors: widget.product_colors,
+          image: localImagePath,
+          customer_id: widget.customer_id.toString(),
+          price: widget.price,
+          qty: widget.qty,
+          qtyExist: widget.qty,
+          desc: widget.desc,
+          initialQty: selectedQty,
+        ),
+      ),
+    );
+
+    setState(() => selectedQty = 0);
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
     return InkWell(
       onTap: () {
+        
         Navigator.push(
             context,
             MaterialPageRoute(
                 builder: (context) => AddProduct(
-                      isOnline: isOnline,
+                      isOnline: globals.isOnline,
                       checkProductBarcode20or13: false,
                       checkProductBarcode: true,
                       productBarcode: "",
@@ -151,14 +264,14 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                     )));
       },
       child: Padding(
-        padding: const EdgeInsets.only(top: 30),
+        padding: const EdgeInsets.only(top: 0),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Container(
             child: Wrap(
               children: [
                 Visibility(
-                  visible: productImage,
+                  visible: globals.productImage,
                   child: Stack(
                     alignment: Alignment.topCenter,
                     children: [
@@ -183,7 +296,7 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                                 topLeft: Radius.circular(4),
                                 topRight: Radius.circular(4),
                               ),
-                              child: isOnline
+                              child: globals.isOnline
                                   ? Image.network(
                                       widget.image,
                                       fit: BoxFit.fill,
@@ -193,7 +306,7 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                                           return child;
                                         return Center(
                                           child: CircularProgressIndicator(
-                                            backgroundColor: Main_Color,
+                                            backgroundColor: globals.Main_Color,
                                           ),
                                         );
                                       },
@@ -234,7 +347,7 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => ProductView(
-                                              image: isOnline
+                                              image: globals.isOnline
                                                   ? widget.image.toString()
                                                   : localImagePath.toString(),
                                             )));
@@ -263,82 +376,62 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                       ),
                     ],
                   ),
-                  height: 70,
+                  height: 100,
                   width: double.infinity,
                   child: Column(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Text(
-                          widget.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                      Container(
+                        height: 30,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            widget.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.start,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                      Spacer(),
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Text(
-                          '${widget.price} ₪',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Main_Color),
-                        ),
+                      const SizedBox(height: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10 , left: 10),
+                        child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${widget.price} ₪',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: globals.Main_Color),
+                          ),
+                          Visibility(
+                            visible: globals.existed_qty,
+                            child: Text(
+                              'متوفر: $maxQty',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: maxQty == 0
+                                    ? Colors.red
+                                    : Colors.grey.shade600),
+                            ),
+                          ),
+                        ],
+                                            ),
                       ),
+                    _qtySelector(),
                     ],
                   ),
                 ),
+                
                 InkWell(
-                  onTap: () {
-                    if (widget.product_colors.length == 0) {
-                      final newItem = CartItem(
-                        productBarcode: "",
-                        quantityexists: 0,
-                        productId: widget.id.toString(),
-                        color: "",
-                        colorsNames: [],
-                        name: widget.name,
-                        image: localImagePath.toString(),
-                        notes: "-",
-                        price: double.parse(widget.price.toString()),
-                        discount: 0.0,
-                        quantity: 1,
-                        ponus1: "0",
-                        ponus2: "0",
-                      );
-                      cartProvider.addToCart(newItem);
-                      Fluttertoast.showToast(
-                        msg: "تم اضافة هذا المنتج الى الطلبية بنجاح",
-                      );
-                      Timer(Duration(milliseconds: 300), () {
-                        Fluttertoast.cancel();
-                      });
-                    } else {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AddProduct(
-                                    isOnline: isOnline,
-                                    checkProductBarcode20or13: false,
-                                    checkProductBarcode: true,
-                                    productBarcode: "",
-                                    packingNumber: widget.packingNumber,
-                                    packingPrice: widget.packingPrice,
-                                    id: widget.id,
-                                    name: widget.name,
-                                    productColors: widget.product_colors,
-                                    image: localImagePath,
-                                    customer_id: widget.customer_id.toString(),
-                                    price: widget.price,
-                                    qty: widget.qty,
-                                    desc: widget.desc,
-                                  )));
-                    }
+                  onTap: ()async {
+                      await _addToFatora(cartProvider);
+                    
                   },
                   child: Container(
                     decoration: BoxDecoration(

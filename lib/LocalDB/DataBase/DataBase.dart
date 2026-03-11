@@ -33,7 +33,7 @@ class CartDatabaseHelper {
   factory CartDatabaseHelper() => _instance;
   CartDatabaseHelper._internal();
 
-  static const int dbVersion = 49;
+  static const int dbVersion = 52;
   static Database? _database;
 
   Future<Database?> get database async {
