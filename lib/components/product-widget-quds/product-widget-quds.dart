@@ -58,8 +58,7 @@ class ProductCardQuds extends StatefulWidget {
         cleanedPath.startsWith("https://")) {
       return Image.network(
         cleanedPath,
-        filterQuality:
-                              FilterQuality.high,
+        filterQuality: FilterQuality.high,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
 
@@ -83,21 +82,24 @@ class ProductCardQuds extends StatefulWidget {
       return Image.file(
         File(cleanedPath),
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Image.asset("assets/quds_logo.jpeg", filterQuality:
-                              FilterQuality.high,),
+        errorBuilder: (_, __, ___) => Image.asset(
+          "assets/quds_logo.jpeg",
+          filterQuality: FilterQuality.high,
+        ),
       );
     }
 
     // ✅ Fallback
-    return Image.asset("assets/quds_logo.jpeg", filterQuality:
-                              FilterQuality.high,);
+    return Image.asset(
+      "assets/quds_logo.jpeg",
+      filterQuality: FilterQuality.high,
+    );
   }
 }
 
 class _ProductCardQudsState extends State<ProductCardQuds> {
   String? localImagePath;
-    int selectedQty = 0;
+  int selectedQty = 0;
 
   int get maxQty {
     final q = int.tryParse(widget.qty.toString()) ?? 0;
@@ -129,7 +131,8 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
   Widget _buildImage(String? imagePath) {
     return ProductCardQuds.buildImage(imagePath);
   }
-    void _toast(String msg) {
+
+  void _toast(String msg) {
     Fluttertoast.showToast(msg: msg);
     Timer(const Duration(milliseconds: 600), () => Fluttertoast.cancel());
   }
@@ -234,13 +237,11 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
     setState(() => selectedQty = 0);
   }
 
-
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
     return InkWell(
       onTap: () {
-        
         Navigator.push(
             context,
             MaterialPageRoute(
@@ -398,40 +399,36 @@ class _ProductCardQudsState extends State<ProductCardQuds> {
                       ),
                       const SizedBox(height: 6),
                       Padding(
-                        padding: const EdgeInsets.only(right: 10 , left: 10),
+                        padding: const EdgeInsets.only(right: 10, left: 10),
                         child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${widget.price} ₪',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: globals.Main_Color),
-                          ),
-                          Visibility(
-                            visible: globals.existed_qty,
-                            child: Text(
-                              'متوفر: $maxQty',
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${widget.price} ₪',
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                color: maxQty == 0
-                                    ? Colors.red
-                                    : Colors.grey.shade600),
+                                  fontWeight: FontWeight.bold,
+                                  color: globals.Main_Color),
                             ),
-                          ),
-                        ],
-                                            ),
+                            Visibility(
+                              visible: globals.existed_qty,
+                              child: Text(
+                                'متوفر: ${widget.qty}',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    _qtySelector(),
+                      _qtySelector(),
                     ],
                   ),
                 ),
-                
                 InkWell(
-                  onTap: ()async {
-                      await _addToFatora(cartProvider);
-                    
+                  onTap: () async {
+                    await _addToFatora(cartProvider);
                   },
                   child: Container(
                     decoration: BoxDecoration(
